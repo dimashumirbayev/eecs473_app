@@ -1,11 +1,45 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, Alert } from "react-native";
+import { useState, useContext } from 'react';
+import Button from "@/components/Button"
+import { printFile, startRecording, stopRecording, deleteAllFiles } from "./recordings";
+
+// Recording data
+let data : string[] = [];
 
 export default function HomeScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Home screen</Text>
-    </View>
-  );
+
+    const [isRecording, setIsRecording] = useState(false);
+
+    return (
+        <View style={styles.container}>
+            <View>
+                <Text style={styles.text}>Home screen</Text>
+            </View>
+            <View>
+                <Button
+                    label = {isRecording? "End Recording" : "Start Recording"}
+                    onPress = {() => {
+                        if (isRecording) {
+                            console.log("End Recording Button Pressed")
+                            stopRecording(data)
+                            alert("Recording Saved")
+                        } else {
+                            console.log("Start Recording Button Pressed")
+                            startRecording()
+                        }
+                        setIsRecording(!isRecording)
+                    }}
+                />
+                <Button
+                    label = {"Delete All Recordings"}
+                    onPress = {() => {
+                        printFile(2)
+                        deleteAllFiles()
+                    }}
+                />
+            </View>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
