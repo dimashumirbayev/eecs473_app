@@ -8,7 +8,7 @@ let data : string[] = [];
 
 export default function HomeScreen() {
 
-    const {recordingNum, validRecordings, startRecordingFunc } = useContext(RecordingContext)
+    const {InitRecordings, startRecording, stopRecording, deleteAllFiles} = useContext(RecordingContext)
 
     const [isRecording, setIsRecording] = useState(false);
 
@@ -27,8 +27,7 @@ export default function HomeScreen() {
                             alert("Recording Saved")
                         } else {
                             console.log("Start Recording Button Pressed")
-                            // startRecording()
-                            startRecordingFunc()
+                            startRecording()
                         }
                         setIsRecording(!isRecording)
                     }}
@@ -36,7 +35,6 @@ export default function HomeScreen() {
                 <Button
                     label = {"Delete All Recordings"}
                     onPress = {() => {
-                        printFile(2)
                         deleteAllFiles()
                     }}
                 />

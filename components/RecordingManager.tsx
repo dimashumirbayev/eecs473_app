@@ -4,13 +4,21 @@ import { Mutex } from "async-mutex";
 import { createContext, useState, useContext } from "react";
 
 const mutex = new Mutex();
+let recordingNum : number = 0
+let validRecordings : number[] = []
+let metadataRecordings: RecordingMetadata[] = []
 let initialized = false;
 let timestamp = Date.now();
 
+export interface RecordingMetadata {
+    recordingNum: number,
+    name: string,
+    timestamp: number,
+};
+
 // Define the type for the context's value
 interface RecordingContextType {
-    recordingNum: number;
-    validRecordings: number[];
+    recordings: RecordingMetadata[];
     InitRecordings: () => void;
     startRecording: () => void;
     stopRecording: (data : string[]) => void;
@@ -22,8 +30,7 @@ interface RecordingContextType {
 
 // Functions and Variables to be exported
 export const RecordingContext = createContext<RecordingContextType>({
-    recordingNum: 0,
-    validRecordings: [],
+    recordings: [],
     InitRecordings: () => {},
     startRecording: () => {},
     stopRecording: (data : string[]) => {},
@@ -35,8 +42,7 @@ export const RecordingContext = createContext<RecordingContextType>({
 
 export const RecordingProvider = ({ children }: { children: React.ReactNode }) => {
 
-    const [recordingNum, setRecordingNum] = useState(0)
-    const [validRecordings, setValidRecordings] = useState([])
+    const [recordings, setrecordings] = useState<RecordingMetadata[]>([])
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// Function Implementations Begin ////////////////////////////////////////////////
@@ -50,7 +56,6 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 
             // Read recordings_state file
             const FilePath = FileSystem.documentDirectory + "recording_state"
-            // await FileSystem.deleteAsync(FilePath) // TODO: test by deleting 'recording_state' file
 
             const FileInfo = await FileSystem.getInfoAsync(FilePath)
             if (!FileInfo.exists) {
@@ -92,6 +97,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 
         mutex.release(); // unlock
     }
+
     async function stopRecording(data : string[]) {
         await InitRecordings();
         await mutex.acquire(); // lock
@@ -120,17 +126,98 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 
         mutex.release(); // unlock
     }
-    const deleteFile = (num : number) => {}
-    const deleteAllFiles = () => {}
-    const renameFile = (num : number, newName : string) => {}
-    const printFile = (num : number) => {}
+
+    async function deleteFile (num : number) {
+        await InitRecordings();
+        await mutex.acquire(); // lock
+
+        const FilePath = FileSystem.documentDirectory + "recording" + String(num)
+        const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
+
+        // Check if recording exists
+        const index = validRecordings.indexOf(num)
+        if (index != -1) {
+            // Delete File
+            const FileStatus = await FileSystem.getInfoAsync(FilePath)
+            if (FileStatus.exists) {
+                await FileSystem.deleteAsync(FilePath)
+            }
+
+            // Update and save recording_state
+            validRecordings.splice(index, 1)
+            let writeVal = String(recordingNum)
+            validRecordings.map((value) => {
+                writeVal += ("," + value)
+            })
+            await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
+            console.log("Deleted recording", num)
+        }
+
+        mutex.release(); // unlock
+    }
+
+    async function deleteAllFiles() {
+        await InitRecordings();
+        await mutex.acquire(); // lock
+
+        // Delete all recordings
+        while (validRecordings.length > 0) {
+            const deleteTarget = validRecordings[0]
+            mutex.release();
+            await deleteFile(deleteTarget)
+            await mutex.acquire();
+        }
+
+        const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
+        await FileSystem.writeAsStringAsync(RecordingStatePath, "0")
+        initialized = false
+
+        mutex.release(); // unlock
+    }
+
+    async function renameFile(num : number, newName : string) {
+        await InitRecordings();
+        await mutex.acquire(); // lock
+
+        // Check if recording exists
+        const index = validRecordings.indexOf(num)
+        if (index != -1) {
+            // Change "name" field within file
+            const FilePath = FileSystem.documentDirectory + "recording" + String(num)
+            const old_contents = await FileSystem.readAsStringAsync(FilePath)
+            let old_contents_split = old_contents.split(",")
+            old_contents_split[0] = newName
+            let writeVal = ""
+            old_contents_split.map((value) => {
+                writeVal += value
+            })
+            await FileSystem.writeAsStringAsync(FilePath, writeVal)
+            console.log("Renamed recording", num, "to", newName)
+        }
+
+        mutex.release(); // unlock
+    }
+
+    async function printFile(num : number) {
+        await InitRecordings();
+        await mutex.acquire(); // lock
+
+        const FilePath = FileSystem.documentDirectory + "recording" + String(num)
+        const FileStatus = await FileSystem.getInfoAsync(FilePath)
+        if (FileStatus.exists) {
+            const Contents = await FileSystem.readAsStringAsync(FilePath)
+            console.log("Contents of recording", num, ":", Contents)
+        }
+
+        mutex.release(); // unlock
+    }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////// Function Implementations End /////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return (
-        <RecordingContext.Provider value ={{ recordingNum, validRecordings, InitRecordings, startRecording,
+        <RecordingContext.Provider value ={{ recordings, InitRecordings, startRecording,
             stopRecording, deleteFile, deleteAllFiles, renameFile, printFile, }}>
             <Text> hello from the other side </Text>
             {children}
