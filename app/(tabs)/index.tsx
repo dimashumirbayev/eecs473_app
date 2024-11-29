@@ -3,14 +3,16 @@ import { Link } from "expo-router";
 import { Image } from "expo-image"
 import { useContext } from "react";
 import { RecordingContext } from "@/components/RecordingManager"
+import { SettingsInit} from "./settings"
 
 const PlaceholderImage = require("../../assets/images/background-image.png")
 
 export default function IndexScreen() {
 
-  const {recordings, InitRecordings, deleteFile, deleteAllFiles, renameFile } = useContext(RecordingContext)
+  const {recordings, RecordingsInit, deleteFile, deleteAllFiles, renameFile } = useContext(RecordingContext)
 
-  InitRecordings();
+  SettingsInit()
+  RecordingsInit();
 
   return (
     <View style={styles.container}>

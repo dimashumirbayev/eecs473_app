@@ -6,7 +6,6 @@ import { createContext, useState } from "react";
 const mutex = new Mutex();
 let recordingNum : number = 0
 let validRecordings : number[] = []
-let metadataRecordings: RecordingMetadata[] = []
 let initialized = false;
 let timestamp = Date.now();
 
@@ -19,7 +18,7 @@ export interface RecordingMetadata {
 // Define the type for the context's value
 interface RecordingContextType {
     recordings: number[];
-    InitRecordings: () => void;
+    RecordingsInit: () => void;
     startRecording: () => void;
     stopRecording: (data : string[]) => void;
     deleteFile: (num : number) => void;
@@ -31,7 +30,7 @@ interface RecordingContextType {
 // Functions and Variables to be exported
 export const RecordingContext = createContext<RecordingContextType>({
     recordings: [],
-    InitRecordings: () => {},
+    RecordingsInit: () => {},
     startRecording: () => {},
     stopRecording: (data : string[]) => {},
     deleteFile: (num : number) => {},
@@ -57,11 +56,11 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         setrecordings(copy)
     }
 
-    async function InitRecordings() {
+    async function RecordingsInit() {
         await mutex.acquire(); // lock
 
         if (!initialized) {
-            console.log("InitRecordings")
+            console.log("RecordingsInit")
 
             // Read recordings_state file
             const FilePath = FileSystem.documentDirectory + "recording_state"
@@ -99,7 +98,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     async function startRecording() {
-        await InitRecordings();
+        await RecordingsInit();
         await mutex.acquire(); // lock
 
         timestamp = Date.now()
@@ -110,7 +109,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     async function stopRecording(data : string[]) {
-        await InitRecordings();
+        await RecordingsInit();
         await mutex.acquire(); // lock
 
         const FilePath = FileSystem.documentDirectory + "recording" + String(recordingNum)
@@ -140,7 +139,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     async function deleteFile (num : number) {
-        await InitRecordings();
+        await RecordingsInit();
         await mutex.acquire(); // lock
 
         const FilePath = FileSystem.documentDirectory + "recording" + String(num)
@@ -170,7 +169,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     async function deleteAllFiles() {
-        await InitRecordings();
+        await RecordingsInit();
         await mutex.acquire(); // lock
 
         // Delete all recordings
@@ -190,7 +189,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     async function renameFile(num : number, newName : string) {
-        await InitRecordings();
+        await RecordingsInit();
         await mutex.acquire(); // lock
 
         // Check if recording exists
@@ -213,7 +212,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     }
 
     async function printFile(num : number) {
-        await InitRecordings();
+        await RecordingsInit();
         await mutex.acquire(); // lock
 
         const FilePath = FileSystem.documentDirectory + "recording" + String(num)
@@ -231,14 +230,12 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return (
-        <RecordingContext.Provider value ={{ recordings, InitRecordings, startRecording,
+        <RecordingContext.Provider value ={{ recordings, RecordingsInit, startRecording,
             stopRecording, deleteFile, deleteAllFiles, renameFile, printFile, }}>
             {children}
         </RecordingContext.Provider>
     )
 }
-
-// TODO: create setAutoDelete(bool) function to be called by settings
 
 function timestamp_to_string(timestamp : number) : string {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]

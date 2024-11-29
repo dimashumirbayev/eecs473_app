@@ -5,7 +5,7 @@ import { RecordingContext } from "@/components/RecordingManager"
 
 export default function RecordingsScreen() {
 
-    const {recordings, InitRecordings, deleteFile, deleteAllFiles, renameFile } = useContext(RecordingContext)
+    const {recordings, RecordingsInit, deleteFile, renameFile } = useContext(RecordingContext)
 
     return (
         <View style={styles.container}>
