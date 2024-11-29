@@ -15,8 +15,6 @@ export default function SettingsScreen() {
     const [orientationVar, setOrientationVar] = useState(o)
     const [autoDeleteVar, setAutoDeleteVar] = useState(a)
 
-    // setOrientationVar(o)
-
     return (
         <View style = {styles.container}>
             <View style = {styles.switchContainer}>
@@ -41,7 +39,6 @@ export default function SettingsScreen() {
                     }}>
                 </Switch>
             </View>
-            <Text style={styles.text}>Settings screen</Text>
         </View>
     );
 }
@@ -114,23 +111,24 @@ async function setAutoDelete(val : boolean) {
     const FileStatus = await FileSystem.getInfoAsync(FilePath)
     if (FileStatus.exists) {
         await FileSystem.writeAsStringAsync(FilePath, String(val))
-        console.log("set auto_delete = ", String(val))
+        console.log("set auto_delete =", String(val))
     }
 
     mutex.release()
 }
 
 // Only needs to be called during stopRecording()
-async function getAutoDelete() : Promise<boolean> {
+export async function getAutoDelete() : Promise<boolean> {
     await SettingsInit()
     await mutex.acquire()
 
     const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
     const val = await FileSystem.readAsStringAsync(FilePath)
     a = Boolean(val == "true")
+    console.log("a =", a)
 
     mutex.release()
-    return Boolean(val)
+    return Boolean(val == "true")
 }
 
 async function setOrientation(val : string) {
@@ -141,20 +139,21 @@ async function setOrientation(val : string) {
     const FileStatus = await FileSystem.getInfoAsync(FilePath)
     if (FileStatus.exists) {
         await FileSystem.writeAsStringAsync(FilePath, String(val))
-        console.log("set orientation = ", String(val))
+        console.log("set orientation =", String(val))
     }
 
     mutex.release()
 }
 
 // Only needs to be called during startup
-async function getOrientation() : Promise<string> {
+export async function getOrientation() : Promise<string> {
     await SettingsInit()
     await mutex.acquire()
 
     const FilePath = FileSystem.documentDirectory + "settings/orientation"
     const val = await FileSystem.readAsStringAsync(FilePath)
     o = Boolean(val == "right")
+    console.log("o =", o)
 
     mutex.release()
     return val

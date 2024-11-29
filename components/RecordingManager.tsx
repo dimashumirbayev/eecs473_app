@@ -2,6 +2,7 @@ import { Text, View, StyleSheet, } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
 import { createContext, useState } from "react";
+import { getAutoDelete } from "@/app/(tabs)/settings";
 
 const mutex = new Mutex();
 let recordingNum : number = 0
@@ -64,7 +65,6 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 
             // Read recordings_state file
             const FilePath = FileSystem.documentDirectory + "recording_state"
-
             const FileInfo = await FileSystem.getInfoAsync(FilePath)
             if (!FileInfo.exists) {
                 console.log("'recording_state' file does not exist")
@@ -74,6 +74,13 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
                 await FileSystem.writeAsStringAsync(FilePath, "0")
             } else {
                 console.log("'recording_state' file already exists")
+            }
+
+            // Create to_delete file -> used for auto_delete files
+            const ToDeletePath = FileSystem.documentDirectory + "to_delete"
+            const ToDeleteStatus = await FileSystem.getInfoAsync(ToDeletePath)
+            if (!ToDeleteStatus.exists) {
+                await FileSystem.writeAsStringAsync(ToDeletePath, "")
             }
 
             const FileContents = await FileSystem.readAsStringAsync(FilePath)
@@ -92,6 +99,14 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
             console.log("validRecordings:", validRecordings)
 
             initialized = true
+
+            // After initialization, delete all items in to_delete
+            const ToDeleteContents = await FileSystem.readAsStringAsync(ToDeletePath)
+            const NumsToDelete = ToDeleteContents.split(",")
+            NumsToDelete.map((value) => {
+                console.log("deleting auto delete file", value)
+                deleteFile(Number(value)) // asynchronously delete all files to be deleted !
+            })
         }
         updateState();
         mutex.release(); // unlock
@@ -133,6 +148,16 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         })
         await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
         console.log("Saved recording", recordingNum - 1)
+
+        // Check AutoDelete Setting
+        const auto_delete = await getAutoDelete()
+        if (auto_delete) {
+            const ToDeletePath = FileSystem.documentDirectory + "to_delete"
+            let ToDeleteContents = await FileSystem.readAsStringAsync(ToDeletePath)
+            ToDeleteContents += ("," + String(recordingNum - 1)) // This is after the increment
+            await FileSystem.writeAsStringAsync(ToDeletePath, ToDeleteContents)
+            console.log("wrote", String(recordingNum - 1), "to auto_delete log")
+        }
 
         updateState();
         mutex.release(); // unlock
