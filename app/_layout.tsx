@@ -1,14 +1,17 @@
 import { Stack } from "expo-router";
 import {LogBox} from "react-native";
+import { RecordingProvider } from "@/components/RecordingManager"
 
 export default function RootLayout() {
   return (
-  <Stack> // Stack screen means it can be overlaid on something
-    <Stack.Screen
-      name="(tabs)"
-      options={{
-        headerShown: false,
-      }}/>
-  </Stack>
+  <RecordingProvider>
+    <Stack> // Stack screen means it can be overlaid on something
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          headerShown: false,
+        }}/>
+    </Stack>
+  </RecordingProvider>
   )
 }

@@ -2,11 +2,14 @@ import { Text, View, StyleSheet, Alert } from "react-native";
 import { useState, useContext } from 'react';
 import Button from "@/components/Button"
 import { printFile, startRecording, stopRecording, deleteAllFiles } from "./recordings";
+import { RecordingContext } from "@/components/RecordingManager"
 
 // Recording data
 let data : string[] = [];
 
 export default function HomeScreen() {
+
+    const {recordingNum, validRecordings, startRecordingFunc } = useContext(RecordingContext)
 
     const [isRecording, setIsRecording] = useState(false);
 
@@ -25,7 +28,8 @@ export default function HomeScreen() {
                             alert("Recording Saved")
                         } else {
                             console.log("Start Recording Button Pressed")
-                            startRecording()
+                            // startRecording()
+                            startRecordingFunc()
                         }
                         setIsRecording(!isRecording)
                     }}

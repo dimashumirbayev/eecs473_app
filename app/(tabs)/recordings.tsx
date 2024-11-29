@@ -1,6 +1,7 @@
 import { Text, View, StyleSheet } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
+import { useState} from "react";
 
 const mutex = new Mutex();
 let recordingNum : number = 0
@@ -9,14 +10,32 @@ let initialized : boolean = false
 
 let timestamp = Date.now()
 
-
 export default function RecordingsScreen() {
 
-    InitRecordings() // Asynchronously initialize
+    InitRecordings()
+
+    // const [recordings, setRecordings] = useState([0])
+
+    const [updated, setUpdated] = useState(true)
+
+    // setRecordings(validRecordings)
+
+    const [people, setPeople] = useState([
+        { name: "Bob", key: 1},
+        { name: "Cob", key: 2},
+    ]);
 
     return (
         <View style={styles.container}>
-        <Text style={styles.text}>Recordings screen</Text>
+            if (updated) {
+                validRecordings.map((recording) => {
+                    return (
+                        <View>
+                            <Text style={styles.text}>a recording here</Text>
+                        </View>
+                    )
+                })
+            }
         </View>
     );
 }
@@ -26,7 +45,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#25292e',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 20,
   },
   text: {
     color: '#fff',
