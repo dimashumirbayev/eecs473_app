@@ -4,6 +4,7 @@ import { Mutex } from "async-mutex";
 import { createContext, useState } from "react";
 import { getAutoDelete } from "@/app/(tabs)/settings";
 
+// Global state managed by RecordingManager
 const mutex = new Mutex();
 let recordingNum : number = 0
 let validRecordings : number[] = []
@@ -13,9 +14,11 @@ let dataBuffer :string[] = [];
 let isRecording = false;
 
 export interface RecordingMetadata {
-    recordingNum: number,
+    key: number, // recordingNum
     name: string,
-    timestamp: number,
+    mode: string
+    startTime: number,
+    endTime: number,
 };
 
 // Define the type for the context's value
@@ -310,4 +313,9 @@ function timestamp_to_string(timestamp : number) : string {
 
     const time = month + " " + day + " " + year + " " + hour + ":" + minute + ":" + second + meridiem
     return time
+}
+
+//
+async function updateMetadata() {
+
 }
