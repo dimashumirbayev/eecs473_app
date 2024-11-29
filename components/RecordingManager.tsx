@@ -1,7 +1,7 @@
 import { Text, View, StyleSheet, } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
-import { createContext, useState, useContext } from "react";
+import { createContext, useState } from "react";
 
 const mutex = new Mutex();
 let recordingNum : number = 0
@@ -18,7 +18,7 @@ export interface RecordingMetadata {
 
 // Define the type for the context's value
 interface RecordingContextType {
-    recordings: RecordingMetadata[];
+    recordings: number[];
     InitRecordings: () => void;
     startRecording: () => void;
     stopRecording: (data : string[]) => void;
@@ -42,11 +42,20 @@ export const RecordingContext = createContext<RecordingContextType>({
 
 export const RecordingProvider = ({ children }: { children: React.ReactNode }) => {
 
-    const [recordings, setrecordings] = useState<RecordingMetadata[]>([])
+    const [recordings, setrecordings] = useState<number[]>([])
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// Function Implementations Begin ////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Creates a deep copy of validRecordings to update state
+    function updateState() {
+        let copy : number[] = []
+        validRecordings.map((value) => {
+            copy.push(value)
+        })
+        setrecordings(copy)
+    }
 
     async function InitRecordings() {
         await mutex.acquire(); // lock
@@ -85,6 +94,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 
             initialized = true
         }
+        updateState();
         mutex.release(); // unlock
     }
 
@@ -95,6 +105,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         timestamp = Date.now()
         console.log("Starting recording", recordingNum, "at", timestamp_to_string(timestamp))
 
+        updateState();
         mutex.release(); // unlock
     }
 
@@ -124,6 +135,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
         console.log("Saved recording", recordingNum - 1)
 
+        updateState();
         mutex.release(); // unlock
     }
 
@@ -153,6 +165,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
             console.log("Deleted recording", num)
         }
 
+        updateState();
         mutex.release(); // unlock
     }
 
@@ -172,6 +185,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await FileSystem.writeAsStringAsync(RecordingStatePath, "0")
         initialized = false
 
+        updateState();
         mutex.release(); // unlock
     }
 
@@ -219,7 +233,6 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     return (
         <RecordingContext.Provider value ={{ recordings, InitRecordings, startRecording,
             stopRecording, deleteFile, deleteAllFiles, renameFile, printFile, }}>
-            <Text> hello from the other side </Text>
             {children}
         </RecordingContext.Provider>
     )

@@ -1,11 +1,14 @@
 import { Text, View, StyleSheet, } from "react-native";
 import { Link } from "expo-router";
 import { Image } from "expo-image"
-import { InitRecordings } from "./recordings";
+import { useContext } from "react";
+import { RecordingContext } from "@/components/RecordingManager"
 
 const PlaceholderImage = require("../../assets/images/background-image.png")
 
 export default function IndexScreen() {
+
+  const {recordings, InitRecordings, deleteFile, deleteAllFiles, renameFile } = useContext(RecordingContext)
 
   InitRecordings();
 

@@ -8,8 +8,7 @@ let data : string[] = [];
 
 export default function HomeScreen() {
 
-    const {InitRecordings, startRecording, stopRecording, deleteAllFiles} = useContext(RecordingContext)
-
+    const {startRecording, stopRecording, deleteAllFiles} = useContext(RecordingContext)
     const [isRecording, setIsRecording] = useState(false);
 
     return (
