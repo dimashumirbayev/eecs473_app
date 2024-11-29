@@ -1,7 +1,6 @@
 import { Text, View, StyleSheet, Alert } from "react-native";
 import { useState, useContext } from 'react';
 import Button from "@/components/Button"
-import { printFile, startRecording, stopRecording, deleteAllFiles } from "./recordings";
 import { RecordingContext } from "@/components/RecordingManager"
 
 // Recording data
