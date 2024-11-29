@@ -18,7 +18,7 @@ export default function HomeScreen() {
                     label = {isRecording? "End Recording" : "Start Recording"}
                     onPress = {() => {
                         if (isRecording) {
-                            stopRecording()
+                            stopRecording("squat")
                             alert("Recording Saved")
                         } else {
                             startRecording()

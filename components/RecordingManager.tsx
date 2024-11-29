@@ -5,13 +5,17 @@ import { createContext, useState } from "react";
 import { getAutoDelete } from "@/app/(tabs)/settings";
 
 // Global state managed by RecordingManager
-const mutex = new Mutex();
+const mutex = new Mutex()
 let recordingNum : number = 0
-let validRecordings : number[] = []
-let initialized = false;
-let timestamp = Date.now();
-let dataBuffer :string[] = [];
-let isRecording = false;
+let recordingNums : number[] = []
+let recordingMetadata : RecordingMetadata[] = []
+let autoDeleteNums : number[] = []
+let initialized = false
+
+// State for current recording
+let isRecording = false
+let dataBuffer :string[] = []
+let startTime = Date.now()
 
 export interface RecordingMetadata {
     key: number, // recordingNum
@@ -23,10 +27,10 @@ export interface RecordingMetadata {
 
 // Define the type for the context's value
 interface RecordingContextType {
-    recordings: number[];
+    recordings: RecordingMetadata[];
     RecordingsInit: () => void;
     startRecording: () => void;
-    stopRecording: () => void;
+    stopRecording: (mode : string) => void;
     deleteFile: (num : number) => void;
     deleteAllFiles: () => void;
     renameFile: (num : number, newName : string) => void;
@@ -39,7 +43,7 @@ export const RecordingContext = createContext<RecordingContextType>({
     recordings: [],
     RecordingsInit: () => {},
     startRecording: () => {},
-    stopRecording: () => {},
+    stopRecording: (mode : string) => {},
     deleteFile: (num : number) => {},
     deleteAllFiles: () => {},
     renameFile: (num : number, newName : string) => {},
@@ -49,16 +53,16 @@ export const RecordingContext = createContext<RecordingContextType>({
 
 export const RecordingProvider = ({ children }: { children: React.ReactNode }) => {
 
-    const [recordings, setrecordings] = useState<number[]>([])
+    const [recordings, setrecordings] = useState<RecordingMetadata[]>([])
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// Function Implementations Begin ////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Creates a deep copy of validRecordings to update state
+// Creates a deep copy of recordingMetadata to update state
     function updateState() {
-        let copy : number[] = []
-        validRecordings.map((value) => {
+        let copy : RecordingMetadata[] = []
+        recordingMetadata.map((value) => {
             copy.push(value)
         })
         setrecordings(copy)
@@ -70,52 +74,21 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         if (!initialized) {
             console.log("RecordingsInit")
 
-            // Read recordings_state file
-            const FilePath = FileSystem.documentDirectory + "recording_state"
-            const FileInfo = await FileSystem.getInfoAsync(FilePath)
-            if (!FileInfo.exists) {
-                console.log("'recording_state' file does not exist")
-
-                // Create file -> file format: values separated by commas: RecordingNum followed by list of valid recordings
-                // Important: because of how strings are parsed, add comma when adding , before adding new element, not after
-                await FileSystem.writeAsStringAsync(FilePath, "0")
-            } else {
-                console.log("'recording_state' file already exists")
-            }
-
-            // Create to_delete file -> used for auto_delete files
-            const ToDeletePath = FileSystem.documentDirectory + "to_delete"
-            const ToDeleteStatus = await FileSystem.getInfoAsync(ToDeletePath)
-            if (!ToDeleteStatus.exists) {
-                await FileSystem.writeAsStringAsync(ToDeletePath, "")
-            }
-
-            const FileContents = await FileSystem.readAsStringAsync(FilePath)
-            console.log("FileContents: ", FileContents)
-
-            const FileContentsSplit = FileContents.split(",")
-            FileContentsSplit.map((value, index) => {
-                if (index == 0) {
-                    recordingNum = Number(value)
-                } else {
-                    validRecordings.push(Number(value))
-                }
-            })
-
-            console.log("recordingNum:", recordingNum)
-            console.log("validRecordings:", validRecordings)
+            await createStateFiles()
+            await readStateFiles()
 
             initialized = true
 
-            // After initialization, delete all items in to_delete
-            const ToDeleteContents = await FileSystem.readAsStringAsync(ToDeletePath)
-            const NumsToDelete = ToDeleteContents.split(",")
-            NumsToDelete.map((value) => {
-                console.log("deleting auto delete file", value)
-                deleteFile(Number(value)) // asynchronously delete all files to be deleted !
+            // After initialization, delete all items in autoDeleteNums
+            const AutoDeleteFilePath = FileSystem.documentDirectory + "recordingAutoDeleteFile"
+            autoDeleteNums.map((value) => {
+                console.log("Deleting auto delete file", value)
+                deleteFile(value) // asynchronously delete files
             })
-            await FileSystem.writeAsStringAsync(ToDeletePath, "")
+            autoDeleteNums = []
+            await FileSystem.writeAsStringAsync(AutoDeleteFilePath, "")
         }
+
         updateState();
         mutex.release(); // unlock
     }
@@ -124,55 +97,46 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await RecordingsInit();
         await mutex.acquire(); // lock
 
-        if (!isRecording) {
-            isRecording = true
-            dataBuffer = []
-            timestamp = Date.now()
-            console.log("Starting recording", recordingNum, "at", timestamp_to_string(timestamp))
-        }
+        isRecording = true
+        dataBuffer = []
+        startTime = Date.now()
+        console.log("Starting recording", recordingNum, "at", timestamp2string(startTime))
 
         updateState();
         mutex.release(); // unlock
     }
 
-    async function stopRecording() {
+    async function stopRecording(mode : string) {
         await RecordingsInit();
         await mutex.acquire(); // lock
 
-        if (isRecording) {
-            isRecording = false
-            const FilePath = FileSystem.documentDirectory + "recording" + String(recordingNum)
-            const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
-
-            // Save recording
-            const name = String(recordingNum)
-            const time = timestamp_to_string(timestamp)
-            let writeVal = name + "," + time
-            dataBuffer.map((value) => {
+        // Save recording
+        isRecording = false
+        const recordingFilePath = FileSystem.documentDirectory + "recording" + String(recordingNum)
+        let writeVal = ""
+        dataBuffer.map((value, index) => {
+            if (index == 0) {
+                writeVal += value
+            } else {
                 writeVal += ("," + value)
-            })
-            await FileSystem.writeAsStringAsync(FilePath, writeVal)
-
-            // Update and save recording_state
-            validRecordings.push(recordingNum)
-            recordingNum ++
-            writeVal = String(recordingNum)
-            validRecordings.map((value) => {
-                writeVal += ("," + value)
-            })
-            await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
-            console.log("Saved recording", recordingNum - 1)
-
-            // Check AutoDelete Setting
-            const auto_delete = await getAutoDelete()
-            if (auto_delete) {
-                const ToDeletePath = FileSystem.documentDirectory + "to_delete"
-                let ToDeleteContents = await FileSystem.readAsStringAsync(ToDeletePath)
-                ToDeleteContents += ("," + String(recordingNum - 1)) // This is after the increment
-                await FileSystem.writeAsStringAsync(ToDeletePath, ToDeleteContents)
-                console.log("wrote", String(recordingNum - 1), "to auto_delete log")
             }
+        })
+        await FileSystem.writeAsStringAsync(recordingFilePath, writeVal)
+        console.log("Saved recording", recordingNum)
+
+        // Update recording state
+        recordingNums.push(recordingNum)
+        recordingMetadata.push({
+            key: recordingNum, name: String(recordingNum), mode: mode, startTime: startTime, endTime: Date.now(),
+        })
+        const autoDeleteSetting = await getAutoDelete()
+        if (autoDeleteSetting) {
+            autoDeleteNums.push(recordingNum)
         }
+        recordingNum ++
+
+        // Write updated recording state to persistent storage
+        await updateStateFiles()
 
         updateState();
         mutex.release(); // unlock
@@ -182,26 +146,24 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await RecordingsInit();
         await mutex.acquire(); // lock
 
-        const FilePath = FileSystem.documentDirectory + "recording" + String(num)
-        const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
-
         // Check if recording exists
-        const index = validRecordings.indexOf(num)
+        const index = recordingNums.indexOf(num)
         if (index != -1) {
             // Delete File
-            const FileStatus = await FileSystem.getInfoAsync(FilePath)
-            if (FileStatus.exists) {
-                await FileSystem.deleteAsync(FilePath)
+            const DeleteFilePath = FileSystem.documentDirectory + "recording" + String(num)
+            const DeleteFileStatus = await FileSystem.getInfoAsync(DeleteFilePath)
+            if (DeleteFileStatus.exists) {
+                await FileSystem.deleteAsync(DeleteFilePath)
             }
-
-            // Update and save recording_state
-            validRecordings.splice(index, 1)
-            let writeVal = String(recordingNum)
-            validRecordings.map((value) => {
-                writeVal += ("," + value)
-            })
-            await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
             console.log("Deleted recording", num)
+
+            // Update recording state
+            recordingNums.splice(index, 1)
+            recordingMetadata.splice(index, 1)
+            // Do not need to remove from autoDeleteNums
+
+            // Write updated recording state to persistent storage
+            await updateStateFiles()
         }
 
         updateState();
@@ -213,15 +175,22 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await mutex.acquire(); // lock
 
         // Delete all recordings
-        while (validRecordings.length > 0) {
-            const deleteTarget = validRecordings[0]
+        while (recordingNums.length > 0) {
+            const deleteTarget = recordingNums[0]
             mutex.release();
             await deleteFile(deleteTarget)
             await mutex.acquire();
         }
 
-        const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
-        await FileSystem.writeAsStringAsync(RecordingStatePath, "0")
+        // Update recording state
+        recordingNum = 0
+        recordingNums = []
+        recordingMetadata = []
+        autoDeleteNums = []
+
+        // Write updated recording state to persistent storage
+        await updateStateFiles()
+
         initialized = false
 
         updateState();
@@ -233,21 +202,19 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await mutex.acquire(); // lock
 
         // Check if recording exists
-        const index = validRecordings.indexOf(num)
+        const index = recordingNums.indexOf(num)
         if (index != -1) {
-            // Change "name" field within file
-            const FilePath = FileSystem.documentDirectory + "recording" + String(num)
-            const old_contents = await FileSystem.readAsStringAsync(FilePath)
-            let old_contents_split = old_contents.split(",")
-            old_contents_split[0] = newName
-            let writeVal = ""
-            old_contents_split.map((value) => {
-                writeVal += value
-            })
-            await FileSystem.writeAsStringAsync(FilePath, writeVal)
-            console.log("Renamed recording", num, "to", newName)
+            // Change name field of metadata
+            let metadata = recordingMetadata[index]
+            metadata.name = newName
+            recordingMetadata[index] = metadata
+            console.log("Renamed recording ", num, "to", newName)
+
+            // Write updated recording state to persistent storage
+            await updateStateFiles()
         }
 
+        updateState()
         mutex.release(); // unlock
     }
 
@@ -286,7 +253,150 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
     )
 }
 
-function timestamp_to_string(timestamp : number) : string {
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// Helper Functions ////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Creates necessary state files with initial values
+async function createStateFiles() {
+    const recordingNumFilePath = FileSystem.documentDirectory + "recordingNumFile"
+    const recordingNumFileStatus = await FileSystem.getInfoAsync(recordingNumFilePath)
+    if (!recordingNumFileStatus.exists) {
+        await FileSystem.writeAsStringAsync(recordingNumFilePath, "0")
+    }
+
+    const recordingNumsFilePath = FileSystem.documentDirectory + "recordingNumsFile"
+    const recordingNumsFileStatus = await FileSystem.getInfoAsync(recordingNumsFilePath)
+    if (!recordingNumsFileStatus.exists) {
+        await FileSystem.writeAsStringAsync(recordingNumsFilePath, "")
+    }
+
+    const recordingMetadataFilePath = FileSystem.documentDirectory + "recordingMetadataFile"
+    const recordingMetadataFileStatus = await FileSystem.getInfoAsync(recordingMetadataFilePath)
+    if (!recordingMetadataFileStatus.exists) {
+        await FileSystem.writeAsStringAsync(recordingMetadataFilePath, "")
+    }
+
+    const recordingAutoDeleteFilePath = FileSystem.documentDirectory + "recordingAutoDeleteFile"
+    const recordingAutoDeleteFileStatus = await FileSystem.getInfoAsync(recordingAutoDeleteFilePath)
+    if (!recordingAutoDeleteFileStatus.exists) {
+        await FileSystem.writeAsStringAsync(recordingAutoDeleteFilePath, "")
+    }
+}
+
+// Reads state files and initializes data structures
+async function readStateFiles() {
+    const recordingNumFilePath = FileSystem.documentDirectory + "recordingNumFile"
+    const recordingNumFileContents = await FileSystem.readAsStringAsync(recordingNumFilePath)
+    recordingNum = Number(recordingNumFileContents)
+    console.log("recordingNum =", Number(recordingNumFileContents))
+
+    const recordingNumsFilePath = FileSystem.documentDirectory + "recordingNumsFile"
+    const recordingNumsFileContents = await FileSystem.readAsStringAsync(recordingNumsFilePath)
+    if (recordingNumsFileContents != "") {
+        const recordingNumsFileSplit = recordingNumsFileContents.split(",")
+        recordingNumsFileSplit.map((value) => {
+            recordingNums.push(Number(value))
+        })
+    }
+    console.log("recordingNums =", recordingNums)
+
+    const recordingMetadataFilePath = FileSystem.documentDirectory + "recordingMetadataFile"
+    const recordingMetadataFileContents = await FileSystem.readAsStringAsync(recordingMetadataFilePath)
+    if (recordingMetadataFileContents != "") {
+        const recordingMetadataFileSplit = recordingMetadataFileContents.split(",")
+        recordingMetadataFileSplit.map((value) => {
+            recordingMetadata.push(string2metadata(value))
+        })
+    }
+    console.log("recordingMetadata =", recordingMetadata)
+
+    const recordingAutoDeleteFilePath = FileSystem.documentDirectory + "recordingAutoDeleteFile"
+    const recordingAutoDeleteFileContents = await FileSystem.readAsStringAsync(recordingAutoDeleteFilePath)
+    if (recordingAutoDeleteFileContents != "") {
+        const recordingAutoDeleteFileSplit = recordingAutoDeleteFileContents.split(",")
+        recordingAutoDeleteFileSplit.map((value) => {
+            autoDeleteNums.push(Number(value))
+        })
+    }
+    console.log("autoDeleteNums =", autoDeleteNums)
+}
+
+async function updateStateFiles() {
+    const recordingNumFilePath = FileSystem.documentDirectory + "recordingNumFile"
+    await FileSystem.writeAsStringAsync(recordingNumFilePath, String(recordingNum))
+
+    const recordingNumsFilePath = FileSystem.documentDirectory + "recordingNumsFile"
+    let recordingNumsWriteVal = ""
+    recordingNums.map((value, index) => {
+        if (index == 0) {
+            recordingNumsWriteVal += value
+        } else {
+            recordingNumsWriteVal += ("," + value)
+        }
+    })
+    await FileSystem.writeAsStringAsync(recordingNumsFilePath, recordingNumsWriteVal)
+
+    const recordingMetadataFilePath = FileSystem.documentDirectory + "recordingMetadataFile"
+    let recordingMetadataWriteVal = ""
+    recordingMetadata.map((value, index) => {
+        if (index == 0) {
+            recordingMetadataWriteVal += metadata2string(value)
+        } else {
+            recordingMetadataWriteVal += ("," + metadata2string(value))
+        }
+    })
+    await FileSystem.writeAsStringAsync(recordingMetadataFilePath, recordingMetadataWriteVal)
+
+    const recordingAutoDeleteFilePath = FileSystem.documentDirectory + "recordingAutoDeleteFile"
+    let recordingAutoDeleteWriteVal = ""
+    autoDeleteNums.map((value, index) => {
+        if (index == 0) {
+            recordingAutoDeleteWriteVal += value
+        } else {
+            recordingAutoDeleteWriteVal += ("," + value)
+        }
+    })
+    await FileSystem.writeAsStringAsync(recordingAutoDeleteFilePath, recordingAutoDeleteWriteVal)
+}
+
+// Convert string of metadata to RecordingMetadata struct
+function string2metadata(metadata : string) : RecordingMetadata {
+    let result : RecordingMetadata = {
+        key: 0, name: "", mode: "", startTime: 0, endTime: 0,
+    }
+
+    const split = metadata.split("*")
+    split.map((value, index) => {
+        switch (index) {
+            case 0:
+                result.key = Number(value)
+                break
+            case 1:
+                result.name = value
+                break
+            case 2:
+                result.mode = value
+                break
+            case 3:
+                result.startTime = Number(value)
+                break
+            case 4:
+                result.endTime = Number(value)
+                break
+        }
+    })
+
+    return result
+}
+
+function metadata2string(metadata : RecordingMetadata) : string {
+    const result = String(metadata.key) + "*" + metadata.name + "*" + metadata.mode + "*"
+        + String(metadata.startTime) + "*" + String(metadata.endTime)
+    return result
+}
+
+function timestamp2string(timestamp : number) : string {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
     // Adds leading 0 if 1 digit number
@@ -313,9 +423,4 @@ function timestamp_to_string(timestamp : number) : string {
 
     const time = month + " " + day + " " + year + " " + hour + ":" + minute + ":" + second + meridiem
     return time
-}
-
-//
-async function updateMetadata() {
-
 }

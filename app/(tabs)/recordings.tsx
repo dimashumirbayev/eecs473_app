@@ -5,7 +5,7 @@ import { RecordingContext } from "@/components/RecordingManager"
 
 export default function RecordingsScreen() {
 
-    const {recordings, RecordingsInit, deleteFile, renameFile } = useContext(RecordingContext)
+    const {recordings, deleteFile, renameFile } = useContext(RecordingContext)
 
     return (
         <View style={styles.container}>
@@ -13,7 +13,7 @@ export default function RecordingsScreen() {
                 recordings.map((recording) => {
                     return (
                         <View>
-                            <Text style={styles.text}> a recording here </Text>
+                            <Text style={styles.text}> {recording.name } </Text>
                         </View>
                     )
                 })
