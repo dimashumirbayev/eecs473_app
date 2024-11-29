@@ -3,12 +3,9 @@ import { useState, useContext } from 'react';
 import Button from "@/components/Button"
 import { RecordingContext } from "@/components/RecordingManager"
 
-// Recording data
-let data : string[] = [];
-
 export default function HomeScreen() {
 
-    const {startRecording, stopRecording, deleteAllFiles} = useContext(RecordingContext)
+    const { startRecording, stopRecording, writeDataLine } = useContext(RecordingContext)
     const [isRecording, setIsRecording] = useState(false);
 
     return (
@@ -21,20 +18,21 @@ export default function HomeScreen() {
                     label = {isRecording? "End Recording" : "Start Recording"}
                     onPress = {() => {
                         if (isRecording) {
-                            console.log("End Recording Button Pressed")
-                            stopRecording(data)
+                            stopRecording()
                             alert("Recording Saved")
                         } else {
-                            console.log("Start Recording Button Pressed")
                             startRecording()
                         }
                         setIsRecording(!isRecording)
                     }}
                 />
+            </View>
+            <View>
                 <Button
-                    label = {"Delete All Recordings"}
+                    label = {"write some data"}
                     onPress = {() => {
-                        deleteAllFiles()
+                        console.log("bruh")
+                        writeDataLine("hello im some data")
                     }}
                 />
             </View>

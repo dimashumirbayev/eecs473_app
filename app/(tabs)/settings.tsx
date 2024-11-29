@@ -1,7 +1,9 @@
 import { Text, View, StyleSheet, Switch } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import Button from "@/components/Button"
+import { RecordingContext } from "@/components/RecordingManager"
 
 let mutex = new Mutex();
 let initialized = false
@@ -14,6 +16,8 @@ export default function SettingsScreen() {
 
     const [orientationVar, setOrientationVar] = useState(o)
     const [autoDeleteVar, setAutoDeleteVar] = useState(a)
+
+    const { deleteAllFiles } = useContext(RecordingContext)
 
     return (
         <View style = {styles.container}>
@@ -38,6 +42,14 @@ export default function SettingsScreen() {
                         setAutoDeleteVar(!autoDeleteVar)
                     }}>
                 </Switch>
+            </View>
+            <View>
+                <Button
+                    label = {"Delete All Recordings"}
+                    onPress = {() => {
+                        deleteAllFiles()
+                    }}
+                />
             </View>
         </View>
     );
@@ -96,8 +108,8 @@ export async function SettingsInit() {
         }
 
         initialized = true
-        getOrientation()
-        getAutoDelete()
+        getOrientationFile()
+        getAutoDeleteFile()
     }
 
     mutex.release()
@@ -113,6 +125,7 @@ async function setAutoDelete(val : boolean) {
         await FileSystem.writeAsStringAsync(FilePath, String(val))
         console.log("set auto_delete =", String(val))
     }
+    a = val
 
     mutex.release()
 }
@@ -122,13 +135,9 @@ export async function getAutoDelete() : Promise<boolean> {
     await SettingsInit()
     await mutex.acquire()
 
-    const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
-    const val = await FileSystem.readAsStringAsync(FilePath)
-    a = Boolean(val == "true")
-    console.log("a =", a)
-
+    const val = a
     mutex.release()
-    return Boolean(val == "true")
+    return val
 }
 
 async function setOrientation(val : string) {
@@ -141,6 +150,7 @@ async function setOrientation(val : string) {
         await FileSystem.writeAsStringAsync(FilePath, String(val))
         console.log("set orientation =", String(val))
     }
+    o = (val == "right")
 
     mutex.release()
 }
@@ -150,11 +160,33 @@ export async function getOrientation() : Promise<string> {
     await SettingsInit()
     await mutex.acquire()
 
+    const val = o ? "right" : "left"
+    mutex.release()
+    return val
+}
+
+// Reads the file and stores value in var a
+async function getAutoDeleteFile() {
+    await SettingsInit()
+    await mutex.acquire()
+
+    const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
+    const val = await FileSystem.readAsStringAsync(FilePath)
+    a = Boolean(val == "true")
+    console.log("a =", a)
+
+    mutex.release()
+}
+
+// Reads the file and stores value in var o
+async function getOrientationFile() {
+    await SettingsInit()
+    await mutex.acquire()
+
     const FilePath = FileSystem.documentDirectory + "settings/orientation"
     const val = await FileSystem.readAsStringAsync(FilePath)
     o = Boolean(val == "right")
     console.log("o =", o)
 
     mutex.release()
-    return val
 }

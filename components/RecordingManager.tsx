@@ -9,6 +9,8 @@ let recordingNum : number = 0
 let validRecordings : number[] = []
 let initialized = false;
 let timestamp = Date.now();
+let dataBuffer :string[] = [];
+let isRecording = false;
 
 export interface RecordingMetadata {
     recordingNum: number,
@@ -21,11 +23,12 @@ interface RecordingContextType {
     recordings: number[];
     RecordingsInit: () => void;
     startRecording: () => void;
-    stopRecording: (data : string[]) => void;
+    stopRecording: () => void;
     deleteFile: (num : number) => void;
     deleteAllFiles: () => void;
     renameFile: (num : number, newName : string) => void;
     printFile: (num : number) => void;
+    writeDataLine: (data : string) => void; // write data line by line into buffer
 };
 
 // Functions and Variables to be exported
@@ -33,11 +36,12 @@ export const RecordingContext = createContext<RecordingContextType>({
     recordings: [],
     RecordingsInit: () => {},
     startRecording: () => {},
-    stopRecording: (data : string[]) => {},
+    stopRecording: () => {},
     deleteFile: (num : number) => {},
     deleteAllFiles: () => {},
     renameFile: (num : number, newName : string) => {},
     printFile: (num : number) => {},
+    writeDataLine: (data : string) => {},
 });
 
 export const RecordingProvider = ({ children }: { children: React.ReactNode }) => {
@@ -107,6 +111,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
                 console.log("deleting auto delete file", value)
                 deleteFile(Number(value)) // asynchronously delete all files to be deleted !
             })
+            await FileSystem.writeAsStringAsync(ToDeletePath, "")
         }
         updateState();
         mutex.release(); // unlock
@@ -116,47 +121,54 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await RecordingsInit();
         await mutex.acquire(); // lock
 
-        timestamp = Date.now()
-        console.log("Starting recording", recordingNum, "at", timestamp_to_string(timestamp))
+        if (!isRecording) {
+            isRecording = true
+            dataBuffer = []
+            timestamp = Date.now()
+            console.log("Starting recording", recordingNum, "at", timestamp_to_string(timestamp))
+        }
 
         updateState();
         mutex.release(); // unlock
     }
 
-    async function stopRecording(data : string[]) {
+    async function stopRecording() {
         await RecordingsInit();
         await mutex.acquire(); // lock
 
-        const FilePath = FileSystem.documentDirectory + "recording" + String(recordingNum)
-        const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
+        if (isRecording) {
+            isRecording = false
+            const FilePath = FileSystem.documentDirectory + "recording" + String(recordingNum)
+            const RecordingStatePath = FileSystem.documentDirectory + "recording_state"
 
-        // Save recording
-        const name = String(recordingNum)
-        const time = timestamp_to_string(timestamp)
-        let writeVal = name + "," + time
-        data.map((value) => {
-            writeVal += ("," + value)
-        })
-        await FileSystem.writeAsStringAsync(FilePath, writeVal)
+            // Save recording
+            const name = String(recordingNum)
+            const time = timestamp_to_string(timestamp)
+            let writeVal = name + "," + time
+            dataBuffer.map((value) => {
+                writeVal += ("," + value)
+            })
+            await FileSystem.writeAsStringAsync(FilePath, writeVal)
 
-        // Update and save recording_state
-        validRecordings.push(recordingNum)
-        recordingNum ++
-        writeVal = String(recordingNum)
-        validRecordings.map((value) => {
-            writeVal += ("," + value)
-        })
-        await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
-        console.log("Saved recording", recordingNum - 1)
+            // Update and save recording_state
+            validRecordings.push(recordingNum)
+            recordingNum ++
+            writeVal = String(recordingNum)
+            validRecordings.map((value) => {
+                writeVal += ("," + value)
+            })
+            await FileSystem.writeAsStringAsync(RecordingStatePath, writeVal)
+            console.log("Saved recording", recordingNum - 1)
 
-        // Check AutoDelete Setting
-        const auto_delete = await getAutoDelete()
-        if (auto_delete) {
-            const ToDeletePath = FileSystem.documentDirectory + "to_delete"
-            let ToDeleteContents = await FileSystem.readAsStringAsync(ToDeletePath)
-            ToDeleteContents += ("," + String(recordingNum - 1)) // This is after the increment
-            await FileSystem.writeAsStringAsync(ToDeletePath, ToDeleteContents)
-            console.log("wrote", String(recordingNum - 1), "to auto_delete log")
+            // Check AutoDelete Setting
+            const auto_delete = await getAutoDelete()
+            if (auto_delete) {
+                const ToDeletePath = FileSystem.documentDirectory + "to_delete"
+                let ToDeleteContents = await FileSystem.readAsStringAsync(ToDeletePath)
+                ToDeleteContents += ("," + String(recordingNum - 1)) // This is after the increment
+                await FileSystem.writeAsStringAsync(ToDeletePath, ToDeleteContents)
+                console.log("wrote", String(recordingNum - 1), "to auto_delete log")
+            }
         }
 
         updateState();
@@ -250,13 +262,22 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         mutex.release(); // unlock
     }
 
+    async function writeDataLine(data : string) {
+        await RecordingsInit();
+        await mutex.acquire(); // lock
+
+        dataBuffer.push(data)
+
+        mutex.release(); // unlock
+    }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////// Function Implementations End /////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return (
         <RecordingContext.Provider value ={{ recordings, RecordingsInit, startRecording,
-            stopRecording, deleteFile, deleteAllFiles, renameFile, printFile, }}>
+            stopRecording, deleteFile, deleteAllFiles, renameFile, printFile, writeDataLine }}>
             {children}
         </RecordingContext.Provider>
     )
