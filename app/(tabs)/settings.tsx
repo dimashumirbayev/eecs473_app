@@ -1,8 +1,7 @@
-import { Text, View, StyleSheet, Switch, Alert, Linking, Pressable } from "react-native";
+import { Text, View, StyleSheet, Switch, Alert, Linking, Pressable, ScrollView } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
 import { useState, useContext } from "react";
-import Button from "@/components/Button"
 import { RecordingContext } from "@/components/RecordingManager"
 
 let mutex = new Mutex();
@@ -20,7 +19,7 @@ export default function SettingsScreen() {
     const { deleteAllFiles } = useContext(RecordingContext)
 
     return (
-        <View style = {styles.container}>
+        <ScrollView style = {styles.container}>
             <View style = {styles.switchContainer}>
                 <Text style = {styles.text} > Orientation </Text>
                 <Switch
@@ -87,7 +86,7 @@ export default function SettingsScreen() {
                     <Text style = {styles.reportBugLabel}> Report a Bug </Text>
                 </Pressable>
             </View>
-        </View>
+        </ScrollView>
     );
 }
 

@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, FlatList } from "react-native";
+import { Text, View, StyleSheet, FlatList, ScrollView } from "react-native";
 import { useContext } from "react";
 import { RecordingContext, timestamp2string } from "@/components/RecordingManager"
 
@@ -6,21 +6,33 @@ export default function RecordingsScreen() {
 
     const {recordings, deleteFile, renameFile } = useContext(RecordingContext)
 
-    return (
-        <View style={styles.container}>
-            <FlatList
-                data = { recordings }
-                renderItem = {({item}) => (
-                    <View style={styles.item}>
-                        <Text style={styles.title}> { item.name } </Text>
-                        <Text style={styles.text}> Exercise: { item.mode } </Text>
-                        <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
-                        <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
-                    </View>
-            )}
-            />
-        </View>
-    );
+    if (recordings.length > 0) {
+        return (
+            <View style={styles.container}>
+                <FlatList
+                    data = { recordings }
+                    renderItem = {({item}) => (
+                        <View style={styles.item}>
+                            <Text style={styles.title}> { item.name } </Text>
+                            <Text style={styles.text}> Exercise: { item.mode } </Text>
+                            <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
+                            <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
+                        </View>
+                )}
+                />
+            </View>
+        );
+    } else {
+        return (
+            <ScrollView style={styles.container}>
+                <View style={styles.item}>
+                    <Text style={styles.text}> </Text>
+                    <Text style={styles.title}>                                   No Recordings Yet </Text>
+                    <Text style={styles.text}> </Text>
+                </View>
+            </ScrollView>
+        );
+    }
 }
 
 const styles = StyleSheet.create({
