@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, Switch, Alert, Linking, Pressable, ScrollView } from "react-native";
+import { Text, View, StyleSheet, Switch, Alert, Linking, ScrollView, TouchableOpacity } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
 import { useState, useContext } from "react";
@@ -43,7 +43,7 @@ export default function SettingsScreen() {
                 </Switch>
             </View>
             <View style={styles.DeleteContainer}>
-                <Pressable
+                <TouchableOpacity
                     style = {styles.DeleteButton}
                     onPress = {() => {
                         Alert.alert(
@@ -64,7 +64,7 @@ export default function SettingsScreen() {
                     }}
                 >
                     <Text style = {styles.DeleteLabel}> Delete All Recordings </Text>
-                </Pressable>
+                </TouchableOpacity>
             </View>
             <View style={styles.AboutBox}>
                 <Text style = {styles.text} > App Info </Text>
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
                 <Text style = {styles.text} > </Text>
             </View>
             <View style={styles.reportBugContainer}>
-                <Pressable
+                <TouchableOpacity
                     style = {styles.reportBugButton}
                     onPress = {() => {
                         const url = "https://github.com/dimashumirbayev/eecs473_app/issues"
@@ -84,7 +84,7 @@ export default function SettingsScreen() {
                     }}
                 >
                     <Text style = {styles.reportBugLabel}> Report a Bug </Text>
-                </Pressable>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     );

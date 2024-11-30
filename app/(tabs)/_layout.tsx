@@ -13,7 +13,7 @@ export default function TabsLayout() {
     <Tabs.Screen
         name="index"
         options={{
-            // href: null, // TODO
+            href: null, // TODO
             headerTitle: "Index",
             tabBarIcon: ({ focused, color }) =>
                 <Ionicons

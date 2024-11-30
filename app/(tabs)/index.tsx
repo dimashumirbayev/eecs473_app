@@ -5,40 +5,15 @@ import { useContext } from "react";
 import { RecordingContext } from "@/components/RecordingManager"
 import { SettingsInit} from "./settings"
 
-const PlaceholderImage = require("../../assets/images/background-image.png")
-
 export default function IndexScreen() {
 
-  const {recordings, RecordingsInit, deleteFile, deleteAllFiles, renameFile } = useContext(RecordingContext)
+  const { RecordingsInit } = useContext(RecordingContext)
 
   SettingsInit()
   RecordingsInit();
 
   return (
-    <View style={styles.container}>
-      <Image source={PlaceholderImage} style={styles.image} />
+    <View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: '#fff',
-  },
-  button: {
-    fontSize: 20,
-    textDecorationLine: "underline",
-    color: "#fff",
-  },
-  image: {
-    width: 320,
-    height: 440,
-    borderRadius: 18,
-  }
-});
