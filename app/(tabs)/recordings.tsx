@@ -14,16 +14,20 @@ export default function RecordingsScreen() {
                     data = { recordings }
                     renderItem = {({item}) => (
                             <View style={styles.item}>
-                                <Text style={styles.title}> { item.name } </Text>
-                                <Text style={styles.text}> Exercise: { item.mode } </Text>
-                                <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
-                                <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
+                                <Text style={styles.title}> </Text>
+                                <Text style={styles.text}> </Text>
+                                <Text style={styles.text}> </Text>
+
                                 <TouchableOpacity
                                     style = {styles.selectbutton}
                                     onPress = {() => {
                                         console.log("Pressed select button for item", item.key)
                                     }}
                                 >
+                                    <Text style={styles.title}> { item.name } </Text>
+                                    <Text style={styles.text}> Exercise: { item.mode } </Text>
+                                    <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
+                                    <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style = {styles.menubutton}
@@ -65,11 +69,14 @@ const styles = StyleSheet.create({
     },
     text: {
         color: '#fff',
+        marginLeft: 5,
     },
     title: {
         color: '#fff',
         // fontSize: 14,
         fontWeight: 'bold',
+        marginTop: 7,
+        marginLeft: 5,
     },
     item: {
         backgroundColor: 'gray',
