@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, FlatList, ScrollView, Pressable } from "react-native";
+import { Text, View, StyleSheet, FlatList, ScrollView, TouchableOpacity  } from "react-native";
 import { useContext } from "react";
 import { RecordingContext, timestamp2string } from "@/components/RecordingManager"
 import { Ionicons } from "@expo/vector-icons";
@@ -18,14 +18,14 @@ export default function RecordingsScreen() {
                                 <Text style={styles.text}> Exercise: { item.mode } </Text>
                                 <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
                                 <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
-                                <Pressable
+                                <TouchableOpacity
                                     style = {styles.selectbutton}
                                     onPress = {() => {
                                         console.log("Pressed select button for item", item.key)
                                     }}
                                 >
-                                </Pressable>
-                                <Pressable
+                                </TouchableOpacity>
+                                <TouchableOpacity
                                     style = {styles.menubutton}
                                     onPress = {() => {
                                         console.log("Pressed menu button for item", item.key)
@@ -35,7 +35,7 @@ export default function RecordingsScreen() {
                                         name = {"menu"}
                                         size = {50}
                                     />
-                                </Pressable>
+                                </TouchableOpacity>
                             </View>
                 )}
                 />
