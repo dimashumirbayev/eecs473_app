@@ -1,6 +1,7 @@
-import { Text, View, StyleSheet, FlatList, ScrollView } from "react-native";
+import { Text, View, StyleSheet, FlatList, ScrollView, Pressable } from "react-native";
 import { useContext } from "react";
 import { RecordingContext, timestamp2string } from "@/components/RecordingManager"
+import { Ionicons } from "@expo/vector-icons";
 
 export default function RecordingsScreen() {
 
@@ -12,12 +13,30 @@ export default function RecordingsScreen() {
                 <FlatList
                     data = { recordings }
                     renderItem = {({item}) => (
-                        <View style={styles.item}>
-                            <Text style={styles.title}> { item.name } </Text>
-                            <Text style={styles.text}> Exercise: { item.mode } </Text>
-                            <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
-                            <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
-                        </View>
+                            <View style={styles.item}>
+                                <Text style={styles.title}> { item.name } </Text>
+                                <Text style={styles.text}> Exercise: { item.mode } </Text>
+                                <Text style={styles.text}> { timestamp2string(item.startTime) } </Text>
+                                <Text style={styles.text}> Duration: { duration2string(item.startTime, item.endTime) } </Text>
+                                <Pressable
+                                    style = {styles.selectbutton}
+                                    onPress = {() => {
+                                        console.log("Pressed select button for item", item.key)
+                                    }}
+                                >
+                                </Pressable>
+                                <Pressable
+                                    style = {styles.menubutton}
+                                    onPress = {() => {
+                                        console.log("Pressed menu button for item", item.key)
+                                    }}
+                                >
+                                    <Ionicons style = {styles.menuicon}
+                                        name = {"menu"}
+                                        size = {50}
+                                    />
+                                </Pressable>
+                            </View>
                 )}
                 />
             </View>
@@ -36,28 +55,53 @@ export default function RecordingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25292e',
-    paddingTop: 10,
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-  },
-  text: {
-    color: '#fff',
-  },
-  title: {
-    color: '#fff',
-    // fontSize: 14,
-    fontWeight: 'bold',
-  },
-  item: {
-    backgroundColor: 'gray',
-    margin: 5,
-    marginBottom: 7,
-    padding: 15,
-    borderRadius: 20,
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#25292e',
+        paddingTop: 10,
+        paddingHorizontal: 10,
+        paddingBottom: 10,
+        position: 'relative',
+    },
+    text: {
+        color: '#fff',
+    },
+    title: {
+        color: '#fff',
+        // fontSize: 14,
+        fontWeight: 'bold',
+    },
+    item: {
+        backgroundColor: 'gray',
+        margin: 5,
+        marginBottom: 7,
+        padding: 15,
+        borderRadius: 20,
+    },
+    selectbutton: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: 384,
+        height: 94,
+        zIndex: 1,
+        // backgroundColor: 'blue'
+    },
+    menuicon: {
+        color: '#fff"',
+        position: 'absolute',
+        top: 0,
+        right: 5,
+    },
+    menubutton: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: 60,
+        height: 50,
+        // backgroundColor: 'red',
+        zIndex: 2,
+    },
 });
 
 function duration2string(startTime : number, endTime : number) : string {
