@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, Switch } from "react-native";
+import { Text, View, StyleSheet, Switch, Alert, Linking, Pressable } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
 import { useState, useContext } from "react";
@@ -43,13 +43,47 @@ export default function SettingsScreen() {
                     }}>
                 </Switch>
             </View>
-            <View>
+            <View style={styles.DeleteButton}>
                 <Button
                     label = {"Delete All Recordings"}
                     onPress = {() => {
-                        deleteAllFiles()
+                        Alert.alert(
+                            "Are you sure?",
+                            "Press OK to delete all recordings",
+                            [
+                              {
+                                text: "Cancel",
+                                style: "cancel"
+                              },
+                              {
+                                text: "OK",
+                                onPress: () => deleteAllFiles(),
+                              }
+                            ],
+                            { cancelable: false }
+                        );
                     }}
                 />
+            </View>
+            <View style={styles.AboutBox}>
+                <Text style = {styles.text} > App Info </Text>
+                <Text style = {styles.text} > </Text>
+                <Text style = {styles.text} > Precision Posture v1.0 </Text>
+                <Text style = {styles.text} > react-native: 0.76.3 </Text>
+                <Text style = {styles.text} > SDK 52.0 </Text>
+                <Text style = {styles.text} > </Text>
+            </View>
+            <View style={styles.reportBugContainer}>
+                <Pressable
+                    style = {styles.reportBugButton}
+                    onPress = {() => {
+                        const url = "https://github.com/dimashumirbayev/eecs473_app/issues"
+                        Linking.openURL(url)
+                        console.log("button pressed")
+                    }}
+                >
+                    <Text style = {styles.reportBugLabel}> Report a Bug </Text>
+                </Pressable>
             </View>
         </View>
     );
@@ -59,17 +93,64 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#25292e',
-        alignItems: 'center',
-        justifyContent: 'center',
+        padding: 10,
     },
     text: {
-        color: '#fff',
+        // color: '#fff',
+        fontSize: 18,
+        // fontWeight: 'bold',
     },
     switchContainer: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingHorizontal: 10,
+        margin: 5,
+        padding: 10,
+        backgroundColor: '#93d0db',
+        borderRadius: 20,
+    },
+    DeleteContainer: {
+
+    },
+    DeleteButton: {
+
+    },
+    DeleteLabel: {
+
+    },
+    DeleteButton: {
+        backgroundColor: 'red',
+        borderRadius: 20,
+        margin: 5,
+        padding: 10,
+    },
+    AboutBox: {
+        backgroundColor: '#93d0db',
+        borderRadius: 20,
+        margin: 5,
+        padding: 10,
+        alignItems: 'center',
+    },
+    reportBugContainer: {
+        height: 68,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 3,
+    },
+    reportBugButton: {
+        borderRadius: 10,
+        width: '50%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+    },
+    reportBugLabel: {
+        color: '#fff',
+        fontSize: 16,
+        textAlign: 'center',
+        alignItems: 'center',
+        justifyContent: 'center',
     }
 });
 

@@ -1,7 +1,6 @@
-import { Text, View, StyleSheet, } from "react-native";
+import { createContext, useState } from "react";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
-import { createContext, useState } from "react";
 import { getAutoDelete } from "@/app/(tabs)/settings";
 
 // Global state managed by RecordingManager
@@ -65,7 +64,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         recordingMetadata.map((value) => {
             copy.push(value)
         })
-        setrecordings(copy)
+        setrecordings(copy.reverse())
     }
 
     async function RecordingsInit() {
@@ -87,9 +86,9 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
             })
             autoDeleteNums = []
             await FileSystem.writeAsStringAsync(AutoDeleteFilePath, "")
+            updateState();
         }
 
-        updateState();
         mutex.release(); // unlock
     }
 
@@ -102,7 +101,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         startTime = Date.now()
         console.log("Starting recording", recordingNum, "at", timestamp2string(startTime))
 
-        updateState();
+        // updateState();
         mutex.release(); // unlock
     }
 
@@ -127,7 +126,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         // Update recording state
         recordingNums.push(recordingNum)
         recordingMetadata.push({
-            key: recordingNum, name: String(recordingNum), mode: mode, startTime: startTime, endTime: Date.now(),
+            key: recordingNum, name: "RECORDING " + String(recordingNum), mode: mode, startTime: startTime, endTime: Date.now(),
         })
         const autoDeleteSetting = await getAutoDelete()
         if (autoDeleteSetting) {
@@ -236,7 +235,9 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
         await RecordingsInit();
         await mutex.acquire(); // lock
 
-        dataBuffer.push(data)
+        if (isRecording) {
+            dataBuffer.push(data)
+        }
 
         mutex.release(); // unlock
     }
@@ -396,7 +397,7 @@ function metadata2string(metadata : RecordingMetadata) : string {
     return result
 }
 
-function timestamp2string(timestamp : number) : string {
+export function timestamp2string(timestamp : number) : string {
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
     // Adds leading 0 if 1 digit number

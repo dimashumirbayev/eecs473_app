@@ -18,7 +18,7 @@ export default function HomeScreen() {
                     label = {isRecording? "End Recording" : "Start Recording"}
                     onPress = {() => {
                         if (isRecording) {
-                            stopRecording("squat")
+                            stopRecording("Squat")
                             alert("Recording Saved")
                         } else {
                             startRecording()
@@ -31,7 +31,6 @@ export default function HomeScreen() {
                 <Button
                     label = {"write some data"}
                     onPress = {() => {
-                        console.log("bruh")
                         writeDataLine("hello im some data")
                     }}
                 />
