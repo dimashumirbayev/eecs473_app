@@ -43,9 +43,9 @@ export default function SettingsScreen() {
                     }}>
                 </Switch>
             </View>
-            <View style={styles.DeleteButton}>
-                <Button
-                    label = {"Delete All Recordings"}
+            <View style={styles.DeleteContainer}>
+                <Pressable
+                    style = {styles.DeleteButton}
                     onPress = {() => {
                         Alert.alert(
                             "Are you sure?",
@@ -63,7 +63,9 @@ export default function SettingsScreen() {
                             { cancelable: false }
                         );
                     }}
-                />
+                >
+                    <Text style = {styles.DeleteLabel}> Delete All Recordings </Text>
+                </Pressable>
             </View>
             <View style={styles.AboutBox}>
                 <Text style = {styles.text} > App Info </Text>
@@ -110,19 +112,22 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     DeleteContainer: {
-
-    },
-    DeleteButton: {
-
-    },
-    DeleteLabel: {
-
-    },
-    DeleteButton: {
         backgroundColor: 'red',
         borderRadius: 20,
+        height: 68,
         margin: 5,
         padding: 10,
+    },
+    DeleteButton: {
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+    },
+    DeleteLabel: {
+        color: '#fff',
+        fontSize: 18,
     },
     AboutBox: {
         backgroundColor: '#93d0db',
