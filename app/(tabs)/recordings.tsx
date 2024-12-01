@@ -251,7 +251,7 @@ export default function RecordingsScreen() {
             <ScrollView style={styles.container}>
                 <View style={styles.norecordingsitem}>
                     <Text style={styles.text}> </Text>
-                    <Text style={styles.title}> No Recordings Yet </Text>
+                    <Text style={styles.norecordingstext}> No Recordings Yet </Text>
                     <Text style={styles.text}> </Text>
                 </View>
             </ScrollView>
@@ -289,10 +289,17 @@ const styles = StyleSheet.create({
     norecordingsitem: {
         backgroundColor: 'gray',
         margin: 5,
-        marginBottom: 7,
         padding: 15,
         borderRadius: 20,
         alignItems: 'center',
+        justifyContent: 'center',
+    },
+    norecordingstext: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        margin: 3,
+        marginLeft: 10,
     },
     selectbutton: {
         position: 'absolute',
