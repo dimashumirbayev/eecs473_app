@@ -2,12 +2,14 @@ import { Text, View, StyleSheet, Alert, ScrollView, TouchableOpacity } from "rea
 import { useState, useContext } from 'react';
 import { RecordingContext } from "@/components/RecordingManager"
 import { Ionicons } from "@expo/vector-icons";
+import useBLE from "@/components/BLEstuff";
 
 export default function HomeScreen() {
 
     const { startRecording, stopRecording, writeDataLine } = useContext(RecordingContext)
     const [isRecording, setIsRecording] = useState(false);
     const [mode, setMode] = useState("Squat")
+    const {data} = useBLE()
 
     return (
         <ScrollView style={styles.scrollcontainer}>
