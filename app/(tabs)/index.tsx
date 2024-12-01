@@ -18,54 +18,53 @@ export default function HomeScreen() {
     return (
         <ScrollView style={styles.scrollcontainer}>
             <View style={styles.modebuttonscontainer}>
-                <TouchableOpacity
-                    style={ (mode=="Squat")? styles.squatbuttonselected : styles.squatbuttonunselected}
-                    onPress={() => {
-                        setMode("Squat")
-                    }}
-                >
-                    <Text style={styles.modetext}> Squat </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={ (mode=="Deadlift")? styles.deadliftbuttonselected : styles.deadliftbuttonunselected}
-                    onPress={() => {
-                        setMode("Deadlift")
-                    }}
-                >
-                    <Text style={styles.modetext}> Deadlift </Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                  style={ (mode=="Squat")? styles.squatbuttonselected : styles.squatbuttonunselected}
+                  onPress={() => {
+                      setMode("Squat")
+                  }}
+              >
+                  <Text style={styles.modetext}> Squat </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                  style={ (mode=="Deadlift")? styles.deadliftbuttonselected : styles.deadliftbuttonunselected}
+                  onPress={() => {
+                      setMode("Deadlift")
+                  }}
+              >
+                  <Text style={styles.modetext}> Deadlift </Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.DataViewerContainer}>
-
             </View>
             <TouchableOpacity
-                style={styles.recordbutton}
-                onPress={() => {
-                    if (isRecording) {
-                        stopRecording(mode)
-                        Alert.alert(
-                            "Recording Saved", '',
-                            [{
-                                    text: "OK",
-                                    onPress: () => {}
-                                }],
-                            { cancelable: false }
-                        );
-                    } else {
-                        startRecording()
-                    }
-                    setIsRecording(!isRecording)
-                }}
+              style={styles.recordbutton}
+              onPress={() => {
+                  if (isRecording) {
+                      stopRecording(mode)
+                      Alert.alert(
+                          "Recording Saved", '',
+                          [{
+                                  text: "OK",
+                                  onPress: () => {}
+                              }],
+                          { cancelable: false }
+                      );
+                  } else {
+                      startRecording()
+                  }
+                  setIsRecording(!isRecording)
+              }}
             >
-                <Ionicons
-                    style = {{
-                        marginLeft: 15,
-                    }}
-                    name = { isRecording? "pause" : "play" }
-                    size = {27}
-                    color = "#1EB1FC"
-                />
-                <Text style={styles.recordtext}> { isRecording ? "Stop Recording" : "Start Recording" } </Text>
+              <Ionicons
+                  style = {{
+                      marginLeft: 15,
+                  }}
+                  name = { isRecording? "pause" : "play" }
+                  size = {27}
+                  color = "#1EB1FC"
+              />
+              <Text style={styles.recordtext}> { isRecording ? "Stop Recording" : "Start Recording" } </Text>
             </TouchableOpacity>
         </ScrollView>
     );
