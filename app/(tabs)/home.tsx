@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, Alert } from "react-native";
+import { Text, View, StyleSheet, Alert, ScrollView } from "react-native";
 import { useState, useContext } from 'react';
 import Button from "@/components/Button"
 import { RecordingContext } from "@/components/RecordingManager"
@@ -10,9 +10,6 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.container}>
-            <View>
-                <Text style={styles.text}>Home screen</Text>
-            </View>
             <View>
                 <Button
                     label = {isRecording? "End Recording" : "Start Recording"}
