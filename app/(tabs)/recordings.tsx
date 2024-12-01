@@ -60,7 +60,7 @@ export default function RecordingsScreen() {
                     <View style={styles.optionsheader}>
                         <Text style={styles.optionsheadertext}> {selectedRecording.name} </Text>
                     </View>
-                    <View style={styles.optionscontainer}>
+                    <ScrollView style={styles.optionscontainer}>
                         <View style={styles.playbackmodecontainer}>
                             <Text style={styles.optionstext}> Mode: {selectedRecording.mode} </Text>
                         </View>
@@ -122,13 +122,13 @@ export default function RecordingsScreen() {
                         >
                             <Text style={styles.optionstext}> Exit </Text>
                         </TouchableOpacity>
-                    </View>
+                    </ScrollView>
                 </Modal>
                 <Modal visible={optionsModalVisible} animationType="slide">
                     <View style = {styles.optionsheader}>
                         <Text style={styles.optionsheadertext}> Options for {selectedRecording.name} </Text>
                     </View>
-                    <View style={styles.optionscontainer}>
+                    <ScrollView style={styles.optionscontainer}>
                         <TouchableOpacity
                             style = {styles.optionsbutton}
                             onPress = {() => {
@@ -201,7 +201,7 @@ export default function RecordingsScreen() {
                         >
                             <Text style={styles.optionstext}> Exit </Text>
                         </TouchableOpacity>
-                    </View>
+                    </ScrollView>
                 </Modal>
                 <FlatList
                     data = { recordings }
