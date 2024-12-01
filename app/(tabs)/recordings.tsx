@@ -107,7 +107,6 @@ export default function RecordingsScreen() {
                             step={1}                      // Step size for each movement
                             value={playbackIndex}         // Current value of the slider
                             onValueChange={(val) => {     // Function to handle slider value change
-                                // TODO: all except max val are valid
                                 setPlaybackIndex(val)
                                 console.log("slider at position", val)
                             }}
