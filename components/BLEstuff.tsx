@@ -13,9 +13,13 @@ import base64 from "react-native-base64";
 const ESP_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const ESP_CHARACTERISTIC = "222b3aab-b500-490a-b17b-0428e174ab54";
 
+async function delay(time : number) {
+  return new Promise(resolve => setTimeout(resolve, time))
+}
+
 interface BluetoothLowEnergyApi {
   requestPermissions(): Promise<boolean>;
-  scanForPeripherals(): void;
+  scanForPeripherals(): Promise<void>;
   connectToDevice: (deviceId: Device) => Promise<void>;
   disconnectFromDevice: () => void;
   connectedDevice: Device | null;
@@ -88,26 +92,26 @@ function useBLE(): BluetoothLowEnergyApi {
   const isDuplicteDevice = (devices: Device[], nextDevice: Device) =>
     devices.findIndex((device) => nextDevice.id === device.id) > -1;
 
-  const scanForPeripherals = () =>
-    bleManager.startDeviceScan(null, null, (error, device) => {
+  const scanForPeripherals = async () =>
+    await bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
         console.log(error);
       }
-      if (device && (device.name === "Precision Posture ESP")) {
+      if (device && (device.name === "ESP32 Dev Board" || device.name === "Precision Posture ESP")) {
         setAllDevices((prevState: Device[]) => {
-
           if (!isDuplicteDevice(prevState, device)) {
             return [...prevState, device];
+          } else {
+            return prevState;
           }
-          console.log("help..");
-          return prevState;
         });
       }
-    });
+    })
+    console.log("allDevices[0] = ", allDevices[0]?.name)
 
   const connectToDevice = async (device: Device) => {
     try {
-      const deviceConnection = await bleManager.connectToDevice(device.id);
+      const deviceConnection = await bleManager.connectToDevice(device.id, {timeout: 1000});
       console.log("connect to", deviceConnection.id, "successful");
       setConnectedDevice(deviceConnection);
       await deviceConnection.discoverAllServicesAndCharacteristics();
@@ -115,6 +119,9 @@ function useBLE(): BluetoothLowEnergyApi {
       startStreamingData(deviceConnection);
     } catch (e) {
       console.log("FAILED TO CONNECT", e);
+      console.log("waiting")
+      await delay(10000)
+      connectToDevice(allDevices[0])
     }
   };
 
@@ -123,6 +130,7 @@ function useBLE(): BluetoothLowEnergyApi {
       console.log(bleManager.cancelDeviceConnection(connectedDevice.id));
       setConnectedDevice(null);
       setData("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
+      setAllDevices([])
     }
   };
 
@@ -132,10 +140,13 @@ function useBLE(): BluetoothLowEnergyApi {
   ) => {
     if (error) {
       console.log(error);
-      return -1;
+      scanForPeripherals()
+      setAllDevices([])
+      setConnectedDevice(null)
+      return
     } else if (!characteristic?.value) {
       console.log("No Data was recieved");
-      return -1;
+      return -1
     }
 
     const dataString = base64.decode(characteristic.value);

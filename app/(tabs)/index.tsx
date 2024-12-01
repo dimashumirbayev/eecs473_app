@@ -1,19 +1,40 @@
 import { Text, View, StyleSheet, Alert, ScrollView, TouchableOpacity } from "react-native";
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { RecordingContext } from "@/components/RecordingManager"
 import { Ionicons } from "@expo/vector-icons";
 import useBLE from "@/components/BLEstuff";
 import { SettingsInit } from "./settings";
+import { DataViewer } from "@/components/DataViewer";
 
 export default function HomeScreen() {
 
     const { startRecording, stopRecording, writeDataLine, RecordingsInit } = useContext(RecordingContext)
     const [isRecording, setIsRecording] = useState(false);
     const [mode, setMode] = useState("Squat")
-    const {data} = useBLE()
+    const { connectedDevice, requestPermissions, scanForPeripherals, allDevices, connectToDevice, data} = useBLE()
+    const [dataString, setDataString] = useState("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
+    const [appInit, setAppInit] = useState(false)
 
     SettingsInit()
-    RecordingsInit();
+    RecordingsInit()
+
+    const scanForDevices = async () => {
+        const isPermissionsEnabled = await requestPermissions();
+        if (isPermissionsEnabled) {
+            await scanForPeripherals();
+        }
+    }
+    async function connectFunc() {
+        await scanForDevices()
+        if (allDevices.length > 0) {
+            await connectToDevice(allDevices[0])
+        }
+    }
+    //connectFunc()
+
+    useEffect(() => {
+        connectFunc()
+    }, [allDevices[0]]);
 
     return (
         <ScrollView style={styles.scrollcontainer}>
@@ -36,6 +57,9 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.DataViewerContainer}>
+                <DataViewer value = {dataString}>
+
+                </DataViewer>
             </View>
             <TouchableOpacity
               style={styles.recordbutton}

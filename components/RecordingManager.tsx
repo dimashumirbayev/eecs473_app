@@ -247,7 +247,7 @@ export const RecordingProvider = ({ children }: { children: React.ReactNode }) =
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     return (
-        <RecordingContext.Provider value ={{ recordings, RecordingsInit, startRecording,
+        <RecordingContext.Provider value = {{ recordings, RecordingsInit, startRecording,
             stopRecording, deleteFile, deleteAllFiles, renameFile, printFile, writeDataLine }}>
             {children}
         </RecordingContext.Provider>

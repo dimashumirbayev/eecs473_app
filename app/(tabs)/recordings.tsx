@@ -4,6 +4,7 @@ import { RecordingContext, RecordingMetadata, timestamp2string } from "@/compone
 import { Ionicons } from "@expo/vector-icons";
 import Slider from '@react-native-community/slider';
 import { readFile } from "@/components/RecordingManager";
+import { DataViewer } from "@/components/DataViewer";
 
 export default function RecordingsScreen() {
 
@@ -21,6 +22,7 @@ export default function RecordingsScreen() {
     const [playbackStarted, setPlaybackStarted] = useState(false)
     const [playbackIndex, setPlaybackIndex] = useState(0) // index into selectedRecordingContents
     const [selectedRecordingContents, setSelectedRecordingContents] = useState<string[]>([])
+    const [playbackString, setPlaybackString] = useState("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
     async function readFileContents(num : number) {
         const FileContents = await readFile(num)
         const FileContentsSplit = FileContents.split(",")
@@ -39,9 +41,11 @@ export default function RecordingsScreen() {
                         if (nextIndex >= selectedRecordingContents.length) { // Finished playback
                             setPlaybackPaused(true)
                             setPlaybackStarted(false)
+                            setPlaybackString(selectedRecordingContents[0])
                             return -1 // Instead of 0 for whatever reason -> set slider back to 0
                         } else {
                             console.log("index increment from", prevIndex, "to", nextIndex)
+                            setPlaybackString(selectedRecordingContents[prevIndex])
                             return nextIndex
                         }
                     })
@@ -65,6 +69,8 @@ export default function RecordingsScreen() {
                             <Text style={styles.optionstext}> Mode: {selectedRecording.mode} </Text>
                         </View>
                         <View style={styles.DataViewerContainer}>
+                            <DataViewer value={playbackString}>
+                            </DataViewer>
                             <TouchableOpacity
                                 style = {styles.PauseContainer}
                                 onPress = {() => {
@@ -108,6 +114,7 @@ export default function RecordingsScreen() {
                             value={playbackIndex}         // Current value of the slider
                             onValueChange={(val) => {     // Function to handle slider value change
                                 setPlaybackIndex(val)
+                                setPlaybackString(selectedRecordingContents[val])
                                 console.log("slider at position", val)
                             }}
                             minimumTrackTintColor="#1EB1FC"   // Color of the track that is below the thumb
@@ -217,6 +224,7 @@ export default function RecordingsScreen() {
                                         console.log("Pressed select button for item", item.key)
                                         readFileContents(item.key) // asynchronously reads file contents
                                         setSelectedRecording(item)
+                                        setPlaybackString(selectedRecordingContents[0])
                                         setPlaybackIndex(-1)
                                         setPlaybackPaused(true)
                                         setPlaybackStarted(false)
