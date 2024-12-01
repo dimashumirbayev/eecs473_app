@@ -13,18 +13,8 @@ export default function TabsLayout() {
     <Tabs.Screen
         name="index"
         options={{
-            // href: null, // TODO
-            headerTitle: "Index",
-            tabBarIcon: ({ focused, color }) =>
-                <Ionicons
-                    name = {focused ? "home" : "home-outline"}
-                    size = {26}
-                />,
-        }}/>
-    <Tabs.Screen
-        name="home"
-        options={{
             headerTitle: "Home",
+            title: "home",
             tabBarIcon: ({ focused, color }) =>
                 <Ionicons
                     name = {"barbell-outline"}
