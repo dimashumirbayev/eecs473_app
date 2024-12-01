@@ -1,12 +1,14 @@
 import { Text, View, StyleSheet, FlatList, ScrollView, TouchableOpacity, Modal, Alert } from "react-native";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { RecordingContext, RecordingMetadata, timestamp2string } from "@/components/RecordingManager"
 import { Ionicons } from "@expo/vector-icons";
+import Slider from '@react-native-community/slider';
+import { readFile } from "@/components/RecordingManager";
 
 export default function RecordingsScreen() {
 
     const {recordings, deleteFile, renameFile } = useContext(RecordingContext)
-    const [modalVisible, setModalVisible ] = useState(false)
+    const [optionsModalVisible, setOptionsModalVisible ] = useState(false)
     const [selectedRecording, setSelectedRecording] = useState<RecordingMetadata>({
         key: -1,
         name: "default",
@@ -14,11 +16,116 @@ export default function RecordingsScreen() {
         startTime: 0,
         endTime: 0,
     })
+    const [playbackModalVisible, setPlaybackModalVisible] = useState(false)
+    const [playbackPaused, setPlaybackPaused] = useState(true)
+    const [playbackStarted, setPlaybackStarted] = useState(false)
+    const [playbackIndex, setPlaybackIndex] = useState(0) // index into selectedRecordingContents
+    const [selectedRecordingContents, setSelectedRecordingContents] = useState<string[]>([])
+    async function readFileContents(num : number) {
+        const FileContents = await readFile(num)
+        const FileContentsSplit = FileContents.split(",")
+        console.log("Playback File has length", FileContentsSplit.length)
+        setSelectedRecordingContents(FileContentsSplit)
+    }
+
+    // Function to handle iteration every X ms during playback
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            // Increment
+            if (playbackModalVisible && playbackStarted) {
+                if (!playbackPaused) {
+                    setPlaybackIndex((prevIndex) => {
+                        const nextIndex = prevIndex + 1
+                        if (nextIndex >= selectedRecordingContents.length) { // Finished playback
+                            setPlaybackPaused(true)
+                            setPlaybackStarted(false)
+                            return -1 // Instead of 0 for whatever reason -> set slider back to 0
+                        } else {
+                            console.log("index increment from", prevIndex, "to", nextIndex)
+                            return nextIndex
+                        }
+                    })
+                }
+            };
+        }, 1000); // 1000ms interval
+        return () => { // Cleanup the interval on unmount
+            clearInterval(intervalId);
+        };
+    }, [playbackModalVisible, playbackStarted, playbackPaused]);
 
     if (recordings.length > 0) {
         return (
             <View style={styles.container}>
-                <Modal visible={modalVisible} animationType="slide">
+                <Modal visible={playbackModalVisible} animationType="slide">
+                    <View style={styles.optionsheader}>
+                        <Text style={styles.optionsheadertext}> {selectedRecording.name} </Text>
+                    </View>
+                    <View style={styles.optionscontainer}>
+                        <View style={styles.playbackmodecontainer}>
+                            <Text style={styles.optionstext}> Mode: {selectedRecording.mode} </Text>
+                        </View>
+                        <View style={styles.DataViewerContainer}>
+                            <TouchableOpacity
+                                style = {styles.PauseContainer}
+                                onPress = {() => {
+                                    if (!playbackStarted) {
+                                        console.log("marking playback started")
+                                        setPlaybackStarted(!playbackStarted)
+                                    }
+                                    setPlaybackPaused(!playbackPaused)
+                                }}
+                            >
+                                <View style={styles.TapToPlayContainer}>
+                                    <Ionicons
+                                    style = {{
+                                        marginLeft: 15,
+                                    }}
+                                    opacity = {playbackStarted ? 0 : 1}
+                                    name = {"play"}
+                                    size = {80}
+                                    color = "#1EB1FC"
+                                    />
+                                    <Text style={{fontSize: 20, color: "#1EB1FC", fontWeight: 'bold'}}> {playbackStarted ? "" : "Tap to Play"} </Text>
+                                </View>
+                                <View style={styles.TapToResumeContainer}>
+                                    <Ionicons
+                                        opacity = {playbackStarted ? 1 : 0}
+                                        name = {playbackPaused ? "play" : "pause"}
+                                        size = {30}
+                                        color = "#1EB1FC"
+                                    />
+                                    <Text style={{fontSize: 20, color: "#1EB1FC"}}>
+                                        {playbackStarted ? (playbackPaused ? "Tap to Resume" : "Tap to Pause"): ""}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                        <Slider
+                            style={styles.slider}         // The style of the slider
+                            minimumValue={0}              // Minimum value of the slider
+                            maximumValue={selectedRecordingContents.length - 1} // Maximum value of the slider
+                            step={1}                      // Step size for each movement
+                            value={playbackIndex}         // Current value of the slider
+                            onValueChange={(val) => {     // Function to handle slider value change
+                                // TODO: all except max val are valid
+                                setPlaybackIndex(val)
+                                console.log("slider at position", val)
+                            }}
+                            minimumTrackTintColor="#1EB1FC"   // Color of the track that is below the thumb
+                            maximumTrackTintColor="#d3d3d3"   // Color of the track above the thumb
+                            thumbTintColor="#1EB1FC"          // Color of the thumb
+                        />
+                        <TouchableOpacity
+                            style = {styles.optionsbutton}
+                            onPress = {() => {
+                                setPlaybackModalVisible(false)
+                            }}
+                        >
+                            <Text style={styles.optionstext}> Exit </Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+                <Modal visible={optionsModalVisible} animationType="slide">
                     <View style = {styles.optionsheader}>
                         <Text style={styles.optionsheadertext}> Options for {selectedRecording.name} </Text>
                     </View>
@@ -27,8 +134,7 @@ export default function RecordingsScreen() {
                             style = {styles.optionsbutton}
                             onPress = {() => {
                                 Alert.prompt(
-                                    'Enter a new name for ' + selectedRecording.name,
-                                    '',
+                                    'Enter a new name for ' + selectedRecording.name, '',
                                     [
                                         {
                                             text: 'Cancel',
@@ -43,8 +149,7 @@ export default function RecordingsScreen() {
                                                 if ((newNameString.indexOf('*') != -1)
                                                     || (newNameString.indexOf(',') != -1)) {
                                                     Alert.alert(
-                                                        "Error: name cannot contain apostrophe or comma",
-                                                        '',
+                                                        "Error: name cannot contain apostrophe or comma", '',
                                                         [{
                                                                 text: "OK",
                                                                 onPress: () => {}
@@ -54,7 +159,7 @@ export default function RecordingsScreen() {
                                                 } else {
                                                     console.log('Name entered:', newName)
                                                     renameFile(selectedRecording.key, String(newName))
-                                                    setModalVisible(false)
+                                                    setOptionsModalVisible(false)
                                                 }
                                             }
                                         },
@@ -79,7 +184,7 @@ export default function RecordingsScreen() {
                                         text: "OK",
                                         onPress: () => {
                                             deleteFile(selectedRecording.key)
-                                            setModalVisible(false)
+                                            setOptionsModalVisible(false)
                                         },
                                       }
                                     ],
@@ -92,7 +197,7 @@ export default function RecordingsScreen() {
                         <TouchableOpacity
                             style = {styles.optionsbutton}
                             onPress = {() => {
-                                setModalVisible(false)
+                                setOptionsModalVisible(false)
                             }}
                         >
                             <Text style={styles.optionstext}> Exit </Text>
@@ -111,7 +216,12 @@ export default function RecordingsScreen() {
                                     style = {styles.selectbutton}
                                     onPress = {() => {
                                         console.log("Pressed select button for item", item.key)
+                                        readFileContents(item.key) // asynchronously reads file contents
                                         setSelectedRecording(item)
+                                        setPlaybackIndex(-1)
+                                        setPlaybackPaused(true)
+                                        setPlaybackStarted(false)
+                                        setPlaybackModalVisible(true)
                                     }}
                                 >
                                     <Text style={styles.title}> { item.name } </Text>
@@ -124,7 +234,7 @@ export default function RecordingsScreen() {
                                     onPress = {() => {
                                         console.log("Pressed menu button for item", item.key)
                                         setSelectedRecording(item)
-                                        setModalVisible(true)
+                                        setOptionsModalVisible(true)
                                     }}
                                 >
                                     <Ionicons style = {styles.menuicon}
@@ -140,9 +250,9 @@ export default function RecordingsScreen() {
     } else {
         return (
             <ScrollView style={styles.container}>
-                <View style={styles.item}>
+                <View style={styles.norecordingsitem}>
                     <Text style={styles.text}> </Text>
-                    <Text style={styles.title}>                                   No Recordings Yet </Text>
+                    <Text style={styles.title}> No Recordings Yet </Text>
                     <Text style={styles.text}> </Text>
                 </View>
             </ScrollView>
@@ -161,14 +271,14 @@ const styles = StyleSheet.create({
     },
     text: {
         color: '#fff',
-        marginLeft: 5,
+        marginLeft: 10,
     },
     title: {
         color: '#fff',
         // fontSize: 14,
         fontWeight: 'bold',
-        marginTop: 7,
-        marginLeft: 5,
+        marginTop: 10,
+        marginLeft: 10,
     },
     item: {
         backgroundColor: 'gray',
@@ -176,6 +286,14 @@ const styles = StyleSheet.create({
         marginBottom: 7,
         padding: 15,
         borderRadius: 20,
+    },
+    norecordingsitem: {
+        backgroundColor: 'gray',
+        margin: 5,
+        marginBottom: 7,
+        padding: 15,
+        borderRadius: 20,
+        alignItems: 'center',
     },
     selectbutton: {
         position: 'absolute',
@@ -228,7 +346,54 @@ const styles = StyleSheet.create({
     optionstext: {
         color: 'white',
         fontSize: 18,
-    }
+    },
+    playbackmodecontainer: {
+        backgroundColor: 'gray',
+        borderRadius: 20,
+        marginTop: 20,
+        marginLeft: 10,
+        marginRight: 10,
+        height: 68,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    slider: {
+        // margin: 10,
+        marginTop: 5,
+        marginBottom: 5,
+        marginLeft: 25,
+        marginRight: 25,
+    },
+    DataViewerContainer: {
+        backgroundColor: 'white',
+        margin: 10,
+        height: 400,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 20,
+    },
+    PauseContainer: {
+        // backgroundColor: 'red',
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 20,
+        // flexDirection: 'row',
+    },
+    TapToPlayContainer: {
+        // backgroundColor: 'red',
+        zIndex: 1,
+    },
+    TapToResumeContainer: {
+        position: 'absolute',
+        top: 0,
+        // backgroundColor: 'blue',
+        flexDirection: 'row',
+        alignItems: 'center',
+        zIndex: 1,
+    },
 });
 
 function duration2string(startTime : number, endTime : number) : string {

@@ -425,3 +425,16 @@ export function timestamp2string(timestamp : number) : string {
     const time = month + " " + day + " " + year + " " + hour + ":" + minute + ":" + second + meridiem
     return time
 }
+
+export async function readFile(num : number) : Promise<string> {
+    console.log("Reading file:", num)
+    const FilePath = FileSystem.documentDirectory + "recording" + String(num)
+    const FileStatus = await FileSystem.getInfoAsync(FilePath)
+    if (FileStatus.exists) {
+        const FileContents = await FileSystem.readAsStringAsync(FilePath)
+        return FileContents
+    } else {
+        console.log("readFile: file", num, "does not exists")
+        return "0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00"
+    }
+}
