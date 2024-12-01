@@ -1,6 +1,7 @@
 import { Text, View, StyleSheet, Alert, ScrollView, TouchableOpacity } from "react-native";
 import { useState, useContext } from 'react';
 import { RecordingContext } from "@/components/RecordingManager"
+import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeScreen() {
 
@@ -28,7 +29,9 @@ export default function HomeScreen() {
                     <Text style={styles.modetext}> Deadlift </Text>
                 </TouchableOpacity>
             </View>
+            <View style={styles.DataViewerContainer}>
 
+            </View>
             <TouchableOpacity
                 style={styles.recordbutton}
                 onPress={() => {
@@ -48,6 +51,14 @@ export default function HomeScreen() {
                     setIsRecording(!isRecording)
                 }}
             >
+                <Ionicons
+                    style = {{
+                        marginLeft: 15,
+                    }}
+                    name = { isRecording? "pause" : "play" }
+                    size = {27}
+                    color = "#1EB1FC"
+                />
                 <Text style={styles.recordtext}> { isRecording ? "Stop Recording" : "Start Recording" } </Text>
             </TouchableOpacity>
         </ScrollView>
@@ -81,7 +92,7 @@ const styles = StyleSheet.create({
     },
     squatbuttonselected: {
         left: 10,
-        backgroundColor: '#93d0db',
+        backgroundColor: '#1EB1FC',
         height: '80%',
         borderRadius: 15,
         marginRight: 5,
@@ -102,7 +113,7 @@ const styles = StyleSheet.create({
     deadliftbuttonselected: {
         position: 'relative',
         right: -13,
-        backgroundColor: '#93d0db',
+        backgroundColor: '#1EB1FC',
         height: '80%',
         borderRadius: 15,
         marginLeft: 5,
@@ -139,5 +150,14 @@ const styles = StyleSheet.create({
     recordtext: {
         color: 'white',
         fontSize: 20,
-    }
+    },
+    DataViewerContainer: {
+        backgroundColor: 'white',
+        margin: 10,
+        height: 400,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 20,
+    },
 });

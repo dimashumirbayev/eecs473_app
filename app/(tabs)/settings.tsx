@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         margin: 5,
         padding: 10,
-        backgroundColor: '#93d0db',
+        backgroundColor: '#1EB1FC',
         borderRadius: 20,
     },
     DeleteContainer: {
