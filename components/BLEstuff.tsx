@@ -20,14 +20,14 @@ interface BluetoothLowEnergyApi {
   disconnectFromDevice: () => void;
   connectedDevice: Device | null;
   allDevices: Device[];
-  heartRate: number;
+  data: string;
 }
 
 function useBLE(): BluetoothLowEnergyApi {
   const bleManager = useMemo(() => new BleManager(), []);
   const [allDevices, setAllDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
-  const [heartRate, setHeartRate] = useState<number>(0);
+  const [data, setData] = useState<string>("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00");
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -122,11 +122,11 @@ function useBLE(): BluetoothLowEnergyApi {
     if (connectedDevice) {
       console.log(bleManager.cancelDeviceConnection(connectedDevice.id));
       setConnectedDevice(null);
-      setHeartRate(0);
+      setData("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
     }
   };
 
-  const onHeartRateUpdate = (
+  const onDataUpdate = (
     error: BleError | null,
     characteristic: Characteristic | null
   ) => {
@@ -138,21 +138,8 @@ function useBLE(): BluetoothLowEnergyApi {
       return -1;
     }
 
-    const rawData = base64.decode(characteristic.value);
-    let innerHeartRate: number = -1;
-    //console.log(rawData);
-
-    // const firstBitValue: number = Number(rawData) & 0x01;
-
-    // if (firstBitValue === 0) {
-    //   innerHeartRate = rawData[1].charCodeAt(0);
-    // } else {
-    //   innerHeartRate =
-    //     Number(rawData[1].charCodeAt(0) << 8) +
-    //     Number(rawData[2].charCodeAt(2));
-    // }
-
-    setHeartRate(rawData);
+    const dataString = base64.decode(characteristic.value);
+    setData(dataString)
   };
 
   const startStreamingData = async (device: Device) => {
@@ -160,7 +147,7 @@ function useBLE(): BluetoothLowEnergyApi {
       device.monitorCharacteristicForService(
         ESP_UUID,
         ESP_CHARACTERISTIC,
-        onHeartRateUpdate
+        onDataUpdate
       );
     } else {
       console.log("No Device Connected");
@@ -174,7 +161,7 @@ function useBLE(): BluetoothLowEnergyApi {
     allDevices,
     connectedDevice,
     disconnectFromDevice,
-    heartRate,
+    data,
   };
 }
 
