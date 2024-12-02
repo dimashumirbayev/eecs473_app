@@ -1,5 +1,5 @@
 /* eslint-disable no-bitwise */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useContext, useRef } from "react";
 import { PermissionsAndroid, Platform } from "react-native";
 import {
   BleError,
@@ -25,6 +25,7 @@ interface BluetoothLowEnergyApi {
   connectedDevice: Device | null;
   allDevices: Device[];
   data: string;
+  updata: number,
 }
 
 function useBLE(): BluetoothLowEnergyApi {
@@ -32,6 +33,8 @@ function useBLE(): BluetoothLowEnergyApi {
   const [allDevices, setAllDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [data, setData] = useState<string>("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00");
+  const [updata, setUpdata] = useState<number>(0)
+  const updataRef = useRef<number>(0)
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -92,12 +95,12 @@ function useBLE(): BluetoothLowEnergyApi {
   const isDuplicteDevice = (devices: Device[], nextDevice: Device) =>
     devices.findIndex((device) => nextDevice.id === device.id) > -1;
 
-  const scanForPeripherals = async () =>
+  const scanForPeripherals = async () => {
     await bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
         console.log(error);
       }
-      if (device && (device.name === "ESP32 Dev Board" || device.name === "Precision Posture ESP")) {
+      if (device && (device.name === "Precision Posture ESP")) {
         setAllDevices((prevState: Device[]) => {
           if (!isDuplicteDevice(prevState, device)) {
             return [...prevState, device];
@@ -107,7 +110,7 @@ function useBLE(): BluetoothLowEnergyApi {
         });
       }
     })
-    console.log("allDevices[0] = ", allDevices[0]?.name)
+  }
 
   const connectToDevice = async (device: Device) => {
     try {
@@ -150,6 +153,9 @@ function useBLE(): BluetoothLowEnergyApi {
     }
 
     const dataString = base64.decode(characteristic.value);
+    updataRef.current++
+    // console.log(updata)
+    setUpdata((prev) => prev + 1)
     setData(dataString)
   };
 
@@ -173,6 +179,7 @@ function useBLE(): BluetoothLowEnergyApi {
     connectedDevice,
     disconnectFromDevice,
     data,
+    updata
   };
 }
 

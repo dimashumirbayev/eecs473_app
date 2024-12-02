@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet, Alert, ScrollView, TouchableOpacity } from "react-native";
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useRef } from 'react';
 import { RecordingContext } from "@/components/RecordingManager"
 import { Ionicons } from "@expo/vector-icons";
 import useBLE from "@/components/BLEstuff";
@@ -11,9 +11,9 @@ export default function HomeScreen() {
     const { startRecording, stopRecording, writeDataLine, RecordingsInit } = useContext(RecordingContext)
     const [isRecording, setIsRecording] = useState(false);
     const [mode, setMode] = useState("Squat")
-    const { connectedDevice, requestPermissions, scanForPeripherals, allDevices, connectToDevice, data} = useBLE()
-    const [dataString, setDataString] = useState("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
-    const [appInit, setAppInit] = useState(false)
+    const { connectedDevice, requestPermissions, scanForPeripherals, allDevices, connectToDevice, data, updata } = useBLE()
+    //const [dataString, setDataString] = useState("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
+    const dataRef = useRef("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
 
     SettingsInit()
     RecordingsInit()
@@ -25,16 +25,22 @@ export default function HomeScreen() {
         }
     }
     async function connectFunc() {
-        await scanForDevices()
-        if (allDevices.length > 0) {
-            await connectToDevice(allDevices[0])
+        if (connectedDevice == null) {
+            await scanForDevices()
+            if (allDevices.length > 0) {
+                await connectToDevice(allDevices[0])
+            }
         }
     }
     //connectFunc()
 
     useEffect(() => {
         connectFunc()
-    }, [allDevices[0]]);
+    }, [allDevices]);
+
+    useEffect(() => {
+        writeDataLine(data)
+    }, [updata]);
 
     return (
         <ScrollView style={styles.scrollcontainer}>
@@ -57,8 +63,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.DataViewerContainer}>
-                <DataViewer value = {dataString}>
-
+                <DataViewer value = {data}>
                 </DataViewer>
             </View>
             <TouchableOpacity
@@ -188,5 +193,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 20,
+        zIndex: 1,
     },
 });

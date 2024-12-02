@@ -21,7 +21,7 @@ export default function RecordingsScreen() {
     const [playbackPaused, setPlaybackPaused] = useState(true)
     const [playbackStarted, setPlaybackStarted] = useState(false)
     const [playbackIndex, setPlaybackIndex] = useState(0) // index into selectedRecordingContents
-    const [selectedRecordingContents, setSelectedRecordingContents] = useState<string[]>([])
+    const [selectedRecordingContents, setSelectedRecordingContents] = useState<string[]>(["0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00"])
     const [playbackString, setPlaybackString] = useState("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
     async function readFileContents(num : number) {
         const FileContents = await readFile(num)
@@ -42,16 +42,18 @@ export default function RecordingsScreen() {
                             setPlaybackPaused(true)
                             setPlaybackStarted(false)
                             setPlaybackString(selectedRecordingContents[0])
+                            console.log("setting playback string 1 to index", 0, " ", selectedRecordingContents[0])
                             return -1 // Instead of 0 for whatever reason -> set slider back to 0
                         } else {
                             console.log("index increment from", prevIndex, "to", nextIndex)
-                            setPlaybackString(selectedRecordingContents[prevIndex])
+                            setPlaybackString(selectedRecordingContents[nextIndex])
+                            console.log("setting playback string 2 to index", nextIndex, " ", selectedRecordingContents[nextIndex])
                             return nextIndex
                         }
                     })
                 }
             };
-        }, 1000); // 1000ms interval
+        }, 100); // 100 ms interval
         return () => { // Cleanup the interval on unmount
             clearInterval(intervalId);
         };
@@ -115,6 +117,7 @@ export default function RecordingsScreen() {
                             onValueChange={(val) => {     // Function to handle slider value change
                                 setPlaybackIndex(val)
                                 setPlaybackString(selectedRecordingContents[val])
+                                console.log("setting playback string 3 to index", val, " ", selectedRecordingContents[val])
                                 console.log("slider at position", val)
                             }}
                             minimumTrackTintColor="#1EB1FC"   // Color of the track that is below the thumb
@@ -225,6 +228,7 @@ export default function RecordingsScreen() {
                                         readFileContents(item.key) // asynchronously reads file contents
                                         setSelectedRecording(item)
                                         setPlaybackString(selectedRecordingContents[0])
+                                        console.log("setting playback string 4 to index", 0, " ", selectedRecordingContents[0])
                                         setPlaybackIndex(-1)
                                         setPlaybackPaused(true)
                                         setPlaybackStarted(false)
@@ -379,7 +383,7 @@ const styles = StyleSheet.create({
         marginRight: 25,
     },
     DataViewerContainer: {
-        backgroundColor: 'white',
+        backgroundColor: '#FFFFF0',
         margin: 10,
         height: 400,
         borderRadius: 20,
@@ -402,7 +406,7 @@ const styles = StyleSheet.create({
     },
     TapToResumeContainer: {
         position: 'absolute',
-        top: 0,
+        top: 15,
         // backgroundColor: 'blue',
         flexDirection: 'row',
         alignItems: 'center',
