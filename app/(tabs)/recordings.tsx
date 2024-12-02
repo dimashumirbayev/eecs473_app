@@ -42,12 +42,10 @@ export default function RecordingsScreen() {
                             setPlaybackPaused(true)
                             setPlaybackStarted(false)
                             setPlaybackString(selectedRecordingContents[0])
-                            console.log("setting playback string 1 to index", 0, " ", selectedRecordingContents[0])
                             return -1 // Instead of 0 for whatever reason -> set slider back to 0
                         } else {
                             console.log("index increment from", prevIndex, "to", nextIndex)
                             setPlaybackString(selectedRecordingContents[nextIndex])
-                            console.log("setting playback string 2 to index", nextIndex, " ", selectedRecordingContents[nextIndex])
                             return nextIndex
                         }
                     })
@@ -117,7 +115,6 @@ export default function RecordingsScreen() {
                             onValueChange={(val) => {     // Function to handle slider value change
                                 setPlaybackIndex(val)
                                 setPlaybackString(selectedRecordingContents[val])
-                                console.log("setting playback string 3 to index", val, " ", selectedRecordingContents[val])
                                 console.log("slider at position", val)
                             }}
                             minimumTrackTintColor="#1EB1FC"   // Color of the track that is below the thumb
@@ -228,7 +225,6 @@ export default function RecordingsScreen() {
                                         readFileContents(item.key) // asynchronously reads file contents
                                         setSelectedRecording(item)
                                         setPlaybackString(selectedRecordingContents[0])
-                                        console.log("setting playback string 4 to index", 0, " ", selectedRecordingContents[0])
                                         setPlaybackIndex(-1)
                                         setPlaybackPaused(true)
                                         setPlaybackStarted(false)

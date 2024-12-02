@@ -1,5 +1,5 @@
 import { Text, View, StyleSheet } from "react-native";
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
 import { curveBasis, line } from 'd3';
 
@@ -11,6 +11,8 @@ export const DataViewer: React.FC<DataViewerProps> = ({ value }) => {
     const initialX = 100;
     const initialY = 200;
     const hypotenuse = 30;
+
+    const [warnings, setWarnings] = useState<string[]>([])
 
     let dxVals = [0,0,0,0,0,0,0,0];
     let dyVals = [0,0,0,0,0,0,0,0];
@@ -75,7 +77,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ value }) => {
     }
 
     //now find good/bad angles
-    for (let i = 1; i < 9; ++i){
+    for (let i = 1; i < 8; ++i){
       //angle at point i
       let ang = Math.abs(3.14-(Math.abs(Number(rads[i])-Number(rads[i-1]))));
       //2 cases red/yellow
@@ -139,34 +141,32 @@ export const DataViewer: React.FC<DataViewerProps> = ({ value }) => {
         });
   };
 
-  const CubicCurve = () => {
+    const CubicCurve = () => {
+        //updates the data points array based off the dx and dy
+        useEffect(() => {
+            calculatePoints();
 
-    //useEffect is called every time "heart rate" is updated
-    //updates the data points array based off the dx and dy
-    useEffect(() => {
-      calculatePoints();
+            //creates a new array based off the initail declared data array
+            //each index has the switch applied to it, changing that id to the updated val
+            const updatedData = data.map(d => {
+                switch(d.id) {
+                case 0: return { x: initialX+shift,       y: initialY,       id: 0 };
+                case 1: return { x: dxVals[0], y: dyVals[0], id: 1 };
+                case 2: return { x: dxVals[1], y: dyVals[1], id: 2 };
+                case 3: return { x: dxVals[2], y: dyVals[2], id: 3 };
+                case 4: return { x: dxVals[3], y: dyVals[3], id: 4 };
+                case 5: return { x: dxVals[4], y: dyVals[4], id: 5 };
+                case 6: return { x: dxVals[5], y: dyVals[5], id: 6 };
+                case 7: return { x: dxVals[6], y: dyVals[6], id: 7 };
+                case 8: return { x: dxVals[7], y: dyVals[7], id: 8 };
+                default: return d;
+                }
+            });
 
-      //creates a new array based off the initail declared data array
-      //each index has the switch applied to it, changing that id to the updated val
-      const updatedData = data.map(d => {
-        switch(d.id) {
-          case 0: return { x: initialX+shift,       y: initialY,       id: 0 };
-          case 1: return { x: dxVals[0], y: dyVals[0], id: 1 };
-          case 2: return { x: dxVals[1], y: dyVals[1], id: 2 };
-          case 3: return { x: dxVals[2], y: dyVals[2], id: 3 };
-          case 4: return { x: dxVals[3], y: dyVals[3], id: 4 };
-          case 5: return { x: dxVals[4], y: dyVals[4], id: 5 };
-          case 6: return { x: dxVals[5], y: dyVals[5], id: 6 };
-          case 7: return { x: dxVals[6], y: dyVals[6], id: 7 };
-          case 8: return { x: dxVals[7], y: dyVals[7], id: 8 };
-          default: return d;
-        }
-      });
-
-      // To avoid unnecessary state updates and re-renders, idk how this works
-      if (JSON.stringify(updatedData) !== JSON.stringify(dataRef.current)) {
-        dataRef.current = updatedData;
-      }
+            // To avoid unnecessary state updates and re-renders, idk how this works
+            if (JSON.stringify(updatedData) !== JSON.stringify(dataRef.current)) {
+                dataRef.current = updatedData;
+            }
     }, [value]);
 
     //every time the new data array is updated create a new path
@@ -179,13 +179,13 @@ export const DataViewer: React.FC<DataViewerProps> = ({ value }) => {
     //path is returned in the main area idk what its called
     //gets placed at line 158 of this current version of code
     if (pathRef.current != null){
-      return (
-          <Canvas style={styles.canvas}>
-            <Path path={pathRef.current} color="blue" style="stroke" strokeWidth={2} />
-            {/* <Path path={"M 158 0 L 158 500"} color="blue" style="stroke" strokeWidth={2}/> */}
-            <DisplayIncicatorCurves/>
-          </Canvas>
-      );
+        return (
+            <Canvas style={styles.canvas}>
+                <Path path={pathRef.current} color="blue" style="stroke" strokeWidth={2} />
+                {/* <Path path={"M 158 0 L 158 500"} color="blue" style="stroke" strokeWidth={2}/> */}
+                <DisplayIncicatorCurves/>
+            </Canvas>
+        );
     }
   };
     return (

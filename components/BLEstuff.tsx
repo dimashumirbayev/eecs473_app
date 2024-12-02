@@ -34,7 +34,6 @@ function useBLE(): BluetoothLowEnergyApi {
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [data, setData] = useState<string>("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00");
   const [updata, setUpdata] = useState<number>(0)
-  const updataRef = useRef<number>(0)
 
   const requestAndroid31Permissions = async () => {
     const bluetoothScanPermission = await PermissionsAndroid.request(
@@ -153,8 +152,6 @@ function useBLE(): BluetoothLowEnergyApi {
     }
 
     const dataString = base64.decode(characteristic.value);
-    updataRef.current++
-    // console.log(updata)
     setUpdata((prev) => prev + 1)
     setData(dataString)
   };
