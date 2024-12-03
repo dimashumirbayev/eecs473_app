@@ -41,16 +41,6 @@ export default function TabsLayout() {
                     size = {26}
                 />,
         }}/>
-    <Tabs.Screen
-        name="sandbox"
-        options={{
-            headerTitle: "Sandbox",
-            tabBarIcon: ({ focused, color }) =>
-                <Ionicons
-                    name = {"logo-xbox"}
-                    size = {26}
-                />,
-        }}/>
     </Tabs>
     )
 }
