@@ -63,7 +63,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.DataViewerContainer}>
-                <DataViewer value = {data}>
+                <DataViewer dataString = {data}>
                 </DataViewer>
             </View>
             <TouchableOpacity
