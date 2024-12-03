@@ -142,9 +142,9 @@ function useBLE(): BluetoothLowEnergyApi {
   ) => {
     if (error) {
       console.log(error);
-      scanForPeripherals()
       setAllDevices([])
       setConnectedDevice(null)
+      scanForPeripherals()
       return
     } else if (!characteristic?.value) {
       console.log("No Data was recieved");

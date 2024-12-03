@@ -44,6 +44,15 @@ export default function HomeScreen() {
 
     return (
         <ScrollView style={styles.scrollcontainer}>
+            <View style={styles.connectingcontainer}>
+                <Ionicons
+                    style = {{ marginRight: 2 }}
+                    name = { connectedDevice == null ? "sad-outline" : "happy-outline" }
+                    size = {30}
+                    color = { connectedDevice == null ? "#d12e17" : "#1EB1FC" }
+                />
+                <Text style={styles.modetext}> {connectedDevice == null ? "Connecting ..." : "Connected" } </Text>
+            </View>
             <View style={styles.modebuttonscontainer}>
               <TouchableOpacity
                   style={ (mode=="Squat")? styles.squatbuttonselected : styles.squatbuttonunselected}
@@ -112,6 +121,18 @@ const styles = StyleSheet.create({
     },
     text: {
         color: '#fff',
+    },
+    connectingcontainer: {
+        flex: 1,
+        flexDirection: 'row',
+        marginLeft: 10,
+        marginRight: 10,
+        marginTop: 15,
+        height: 68,
+        backgroundColor: 'gray',
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     modebuttonscontainer: {
         flex: 1,
