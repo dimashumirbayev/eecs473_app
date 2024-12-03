@@ -1,9 +1,10 @@
 import { Text, View, StyleSheet } from "react-native";
-import { useEffect, useState, useRef } from "react";
-import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useRef } from "react";
+import { Canvas, Path, Skia, SkPath, useSVG, ImageSVG } from "@shopify/react-native-skia";
 import { curveBasis, line } from 'd3';
-import { ReactComponent as VertebraeIcon } from '../../assets/images/vertebrae.svg';
 import { Ionicons } from "@expo/vector-icons";
+import { getOrientation, getShowIcons } from "@/app/(tabs)/settings";
 
 type Coordinate = {
     x: number,
@@ -13,6 +14,19 @@ type Coordinate = {
 const NUM_IMUS = 8
 
 export default function SandboxScreen() {
+
+    const [myShowIcons, setMyShowIcons] = useState(false)
+    const [myOrientation, setMyOrientation] = useState(false) // left by default
+
+    useFocusEffect(
+        React.useCallback(() => {
+          // This callback will be executed when the screen comes into focus
+          // fetchData(); // Fetch your data or perform any necessary
+            console.log("sandbox render")
+            setMyShowIcons(getShowIcons())
+            setMyOrientation(getOrientation())
+        }, [myShowIcons, myOrientation])
+    );
 
     const dataString = "0.78 0.83 1.24 0.37 1.7 0.48 0.73 0.96 "
     const dataStringSplit = dataString.split(" ")
@@ -31,7 +45,7 @@ export default function SandboxScreen() {
         const angle = Number(dataStringSplit[i])
         angles.push(angle)
 
-        const deltaX = Math.cos(angle)
+        const deltaX = (myOrientation) ? - Math.cos(angle) : Math.cos(angle)
         const deltaY = -Math.sin(angle) // negative to account for flipped coordinate system
         deltas.push({x: deltaX, y: deltaY})
 
@@ -74,8 +88,8 @@ export default function SandboxScreen() {
             meDelta = deltas[i]
         }
         const meCoord = coords[i]
-        const a = 20 * meDelta.x
-        const b = 20 * meDelta.y
+        const a = 30 * meDelta.x
+        const b = 30 * meDelta.y
         leftCoords.push({x: b + meCoord.x, y: -a + meCoord.y}) // these are flipped due to coordinate system
         rightCoords.push({x: -b + meCoord.x, y: a + meCoord.y})
     }
@@ -186,7 +200,7 @@ export default function SandboxScreen() {
 
             // Set color based on segColors
             const colorIndex = (segColors.length - 1) * (index / 16)
-            console.log(colorIndex)
+            // console.log(colorIndex)
             const vertColor = segColors[ Math.round(colorIndex) ]
 
             return {x: interpX, y: interpY, tilt: angle, color: vertColor.color}
@@ -220,22 +234,24 @@ export default function SandboxScreen() {
                 </Canvas>
                 <View style={styles.picturecanvas}>
                     {
-                        vertebraePoints.map((value, index) =>  {
+                        vertebraePoints.map((value) =>  {
                             {
-                            return <View style={{
-                                position: 'absolute',
-                                top: value.y - 7,
-                                left: value.x - 15,
-                            }}>
-                                <Ionicons
-                                name={"home"}
-                                size={15}
-                                color={value.color}
-                                style={{
-                                    transform: [{ rotate: (value.tilt + 90 )+ 'deg' }]
-                                }}
-                                />
-                            </View>
+                            if (myShowIcons) {
+                                return <View style={{
+                                    position: 'absolute',
+                                    top: value.y - 12,
+                                    left: value.x - 17,
+                                }}>
+                                    <Ionicons
+                                    name={"tablet-landscape-outline"}
+                                    size={25}
+                                    color={value.color}
+                                    style={{
+                                        transform: [{ rotate: (value.tilt + 90 )+ 'deg' }]
+                                    }}
+                                    />
+                                </View>
+                                }
                             }
                         })
                     }

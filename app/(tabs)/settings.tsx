@@ -8,13 +8,15 @@ let mutex = new Mutex();
 let initialized = false
 
 // Used for initialization ONLY
-let o = false
-let a = false
+let o = false //  orientation
+let a = false // auto-delete
+let i = false // show icons
 
 export default function SettingsScreen() {
 
     const [orientationVar, setOrientationVar] = useState(o)
     const [autoDeleteVar, setAutoDeleteVar] = useState(a)
+    const [showIconsVar, setShowIconsVar] = useState(i)
 
     const { deleteAllFiles } = useContext(RecordingContext)
 
@@ -28,7 +30,16 @@ export default function SettingsScreen() {
                         const direction = orientationVar ? "left" : "right"
                         setOrientationVar(!orientationVar)
                         setOrientation(direction)
-                        setOrientationVar(!orientationVar)
+                    }}>
+                </Switch>
+            </View>
+            <View style = {styles.switchContainer}>
+                <Text style = {styles.text} > Show Icons </Text>
+                <Switch
+                    value = {showIconsVar}
+                    onValueChange = {() => {
+                        setShowIcons(!showIconsVar)
+                        setShowIconsVar(!showIconsVar)
                     }}>
                 </Switch>
             </View>
@@ -192,9 +203,20 @@ export async function SettingsInit() {
             console.log("file /settings/orientation exists")
         }
 
+        // Create /settings/icons
+        const IconPath = SettingsDir + "icon"
+        const IconStatus = await FileSystem.getInfoAsync(IconPath)
+        if (!IconStatus.exists) {
+            console.log("Creating file /settings/icon")
+            FileSystem.writeAsStringAsync(IconPath, "false")
+        } else {
+            console.log("file /settings/icon exists")
+        }
+
         initialized = true
         getOrientationFile()
         getAutoDeleteFile()
+        getIconFile()
     }
 
     mutex.release()
@@ -241,13 +263,32 @@ async function setOrientation(val : string) {
 }
 
 // Only needs to be called during startup
-export async function getOrientation() : Promise<string> {
+export function getOrientation() : boolean {
+    // await SettingsInit()
+    // await mutex.acquire()
+
+    return o // ? "right" : "left"
+    // mutex.release()
+    // return val
+}
+
+async function setShowIcons(setVal : boolean) {
     await SettingsInit()
     await mutex.acquire()
 
-    const val = o ? "right" : "left"
+    const FilePath = FileSystem.documentDirectory + "settings/icon"
+    const FileStatus = await FileSystem.getInfoAsync(FilePath)
+    if (FileStatus.exists) {
+        await FileSystem.writeAsStringAsync(FilePath, String(setVal))
+        console.log("set icon =", String(setVal))
+    }
+    i = setVal
+
     mutex.release()
-    return val
+}
+
+export function getShowIcons() : boolean {
+    return i
 }
 
 // Reads the file and stores value in var a
@@ -272,6 +313,19 @@ async function getOrientationFile() {
     const val = await FileSystem.readAsStringAsync(FilePath)
     o = Boolean(val == "right")
     console.log("o =", o)
+
+    mutex.release()
+}
+
+// Reads the file and stores value in var i
+async function getIconFile() {
+    await SettingsInit()
+    await mutex.acquire()
+
+    const FilePath = FileSystem.documentDirectory + "settings/icon"
+    const val = await FileSystem.readAsStringAsync(FilePath)
+    i = Boolean(val == "true")
+    console.log("i =", i)
 
     mutex.release()
 }
