@@ -12,8 +12,6 @@ export default function HomeScreen() {
     const [isRecording, setIsRecording] = useState(false);
     const [mode, setMode] = useState("Squat")
     const { connectedDevice, requestPermissions, scanForPeripherals, allDevices, connectToDevice, data, updata } = useBLE()
-    //const [dataString, setDataString] = useState("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
-    const dataRef = useRef("0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00")
 
     SettingsInit()
     RecordingsInit()
