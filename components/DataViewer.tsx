@@ -142,31 +142,68 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
             dir = "right"
         }
 
-        if (ang < 120) { // red
-            if (dir == "right" && rightPathRef.current != null) {
-                getPathSeg(rightPathRef.current, i, 'red')
-                getPathSeg(rightPathRef.current, i+1, 'red')
-            } else if (dir == "left" && leftPathRef.current != null) {
-                getPathSeg(leftPathRef.current, i, 'red')
-                getPathSeg(leftPathRef.current, i+1, 'red')
-            }
-            segColors[i] = {color: 'red'}
-            segColors[i+1] = {color: 'red'}
-        } else if (ang < 150) { // yellow
-            if (dir == "right" && rightPathRef.current != null) {
-                getPathSeg(rightPathRef.current, i, 'yellow')
-                getPathSeg(rightPathRef.current, i+1, 'yellow')
-            } else if (dir == "left" && leftPathRef.current != null) {
-                getPathSeg(leftPathRef.current, i, 'yellow')
-                getPathSeg(leftPathRef.current, i+1, 'yellow')
-            }
-            if (segColors[i].color != 'red') {
-                segColors[i] = {color: 'yellow'}
-            }
-            if (segColors[i+1].color != 'red') {
-                segColors[i+1] = {color: 'yellow'}
+        /////////////////////////////////////////////////////////////////////////////
+        function AngletoColor(angle : number, dir : string, mode : string) {
+            const ANGLE = dir == "left"? angle : (360 - angle) // angle expressed in left direction
+            console.log("Angle", i, "=", ANGLE, "left")
+
+            const squat_ideals : number[] = [180, 180, 180, 180, 180, 180, 180] // ideal value for each angle
+            const squat_red_variances : number[] = [30, 30, 30, 30, 30, 30, 30] // allowed variances for each angle, greater -> red
+            const squat_yellow_variances : number[] = [50, 50, 50, 50, 50, 50, 50] // allowed variances for each angle, greater -> yellow
+
+            if (Math.abs(squat_ideals[i] - ANGLE) > squat_red_variances[i]) { // red
+                if (dir == "right" && rightPathRef.current != null) {
+                    getPathSeg(rightPathRef.current, i, 'red')
+                    getPathSeg(rightPathRef.current, i+1, 'red')
+                } else if (dir == "left" && leftPathRef.current != null) {
+                    getPathSeg(leftPathRef.current, i, 'red')
+                    getPathSeg(leftPathRef.current, i+1, 'red')
+                }
+                segColors[i] = {color: 'red'}
+                segColors[i+1] = {color: 'red'}
+            } else if (Math.abs(squat_ideals[i] - ANGLE) > squat_yellow_variances[i]) { // yellow
+                if (dir == "right" && rightPathRef.current != null) {
+                    getPathSeg(rightPathRef.current, i, 'yellow')
+                    getPathSeg(rightPathRef.current, i+1, 'yellow')
+                } else if (dir == "left" && leftPathRef.current != null) {
+                    getPathSeg(leftPathRef.current, i, 'yellow')
+                    getPathSeg(leftPathRef.current, i+1, 'yellow')
+                }
+                if (segColors[i].color != 'red') {
+                    segColors[i] = {color: 'yellow'}
+                }
+                if (segColors[i+1].color != 'red') {
+                    segColors[i+1] = {color: 'yellow'}
+                }
             }
         }
+        AngletoColor(ang, dir, "Squat")
+
+        /////////////////////////////////////////////////////////////////////////////
+
+        // if (ang < 130) { // red
+        //     if (dir == "right" && rightPathRef.current != null) {
+        //         getPathSeg(rightPathRef.current, i, 'red')
+        //         getPathSeg(rightPathRef.current, i+1, 'red')
+        //     } else if (dir == "left" && leftPathRef.current != null) {
+        //         getPathSeg(leftPathRef.current, i, 'red')
+        //         getPathSeg(leftPathRef.current, i+1, 'red')
+        //     }
+        // } else if (ang < 150) { // yellow
+        //     if (dir == "right" && rightPathRef.current != null) {
+        //         getPathSeg(rightPathRef.current, i, 'yellow')
+        //         getPathSeg(rightPathRef.current, i+1, 'yellow')
+        //     } else if (dir == "left" && leftPathRef.current != null) {
+        //         getPathSeg(leftPathRef.current, i, 'yellow')
+        //         getPathSeg(leftPathRef.current, i+1, 'yellow')
+        //     }
+        //     if (segColors[i].color != 'red') {
+        //         segColors[i] = {color: 'yellow'}
+        //     }
+        //     if (segColors[i+1].color != 'red') {
+        //         segColors[i+1] = {color: 'yellow'}
+        //     }
+        // }
     }
 
     // 7. Interpolate along SkPath to place vertebrae
