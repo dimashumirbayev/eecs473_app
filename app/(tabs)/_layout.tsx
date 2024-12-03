@@ -15,7 +15,7 @@ export default function TabsLayout() {
         options={{
             headerTitle: "Home",
             title: "home",
-            tabBarIcon: ({ focused, color }) =>
+            tabBarIcon: ({ focused }) =>
                 <Ionicons
                     name = {"barbell-outline"}
                     size = {focused ? 31 : 30}
@@ -25,7 +25,7 @@ export default function TabsLayout() {
         name="recordings"
         options={{
             headerTitle: "Recordings",
-            tabBarIcon: ({ focused, color }) =>
+            tabBarIcon: ({ focused }) =>
                 <Ionicons
                     name = {focused ? "videocam" : "videocam-outline"}
                     size = {30}
@@ -35,7 +35,7 @@ export default function TabsLayout() {
         name="settings"
         options={{
             headerTitle: "Settings",
-            tabBarIcon: ({ focused, color }) =>
+            tabBarIcon: ({ focused }) =>
                 <Ionicons
                     name = {focused ? "settings-sharp" : "settings-outline"}
                     size = {26}

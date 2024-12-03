@@ -1,7 +1,7 @@
 import { Text, View, StyleSheet } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useRef } from "react";
-import { Canvas, Path, Skia, SkPath, useSVG, ImageSVG } from "@shopify/react-native-skia";
+import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
 import { curveBasis, line } from 'd3';
 import { Ionicons } from "@expo/vector-icons";
 import { getOrientation, getShowIcons } from "@/app/(tabs)/settings";
@@ -75,9 +75,9 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
         const newY = ((me.y - centerY) * scaleFactor) + shiftY
         coords[i] = {x: newX, y: newY}
     }
-    console.log("shiftX:", shiftX)
-    console.log("shiftY:", shiftY)
-    console.log("scaleFactor:", scaleFactor)
+    // console.log("shiftX:", shiftX)
+    // console.log("shiftY:", shiftY)
+    // console.log("scaleFactor:", scaleFactor)
 
     // 3. Construct left-side and right-side coordinates
     let leftCoords : Coordinate[] = []
@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 20,
-        zIndex: 1,
     },
     container: {
         flex: 1,
@@ -296,7 +295,6 @@ const styles = StyleSheet.create({
         height: '100%',
         width: '100%',
         overflow: 'hidden',
-        zIndex: 1,
     },
     path: {
         top: 100,
