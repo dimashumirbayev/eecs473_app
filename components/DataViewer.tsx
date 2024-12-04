@@ -2,12 +2,13 @@ import { Text, View, StyleSheet } from "react-native";
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useRef } from "react";
 import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
-import { curveBasis, line } from 'd3';
+import { curveBasis, curveLinear, line } from 'd3';
 import { Ionicons } from "@expo/vector-icons";
 import { getOrientation, getShowIcons } from "@/app/(tabs)/settings";
 
 interface DataViewerProps {
     dataString: string;
+    source: string,
 }
 
 type Coordinate = {
@@ -17,7 +18,7 @@ type Coordinate = {
 
 const NUM_IMUS = 8
 
-export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
+export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) => {
 
     const [myShowIcons, setMyShowIcons] = useState(false)
     const [myOrientation, setMyOrientation] = useState(false) // left by default
@@ -60,6 +61,16 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
         minY = Math.min(minY, y)
         maxX = Math.max(maxX, x)
         maxY = Math.max(maxY, y)
+    }
+
+    // Detection for Excessive Forward Lean
+    let warnings : string[] = []
+    const overallDx = Math.abs(coords[coords.length-1].x - coords[0].x)
+    const overallDy = coords[coords.length-1].y - coords[0].y
+    const overallAngle = rad2deg(Math.atan(overallDy / overallDx))
+    console.log("overallAngle = ", overallAngle)
+    if (overallAngle < 50) { // 55
+        warnings.push("Excessive Forward Lean")
     }
 
     // 2. Calculate center and use this information to scale the data
@@ -145,12 +156,15 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
         /////////////////////////////////////////////////////////////////////////////
         function AngletoColor(angle : number, dir : string, mode : string) {
             const ANGLE = dir == "left"? angle : (360 - angle) // angle expressed in left direction
-            console.log("Angle", i, "=", ANGLE, "left")
+            if (source == "recordings") {
+                console.log("Angle", i, "=", ANGLE, "left")
+            }
 
-            const squat_ideals : number[] = [180, 180, 180, 180, 180, 180, 180] // ideal value for each angle
-            const squat_red_variances : number[] = [30, 30, 30, 30, 30, 30, 30] // allowed variances for each angle, greater -> red
-            const squat_yellow_variances : number[] = [50, 50, 50, 50, 50, 50, 50] // allowed variances for each angle, greater -> yellow
+            const squat_ideals : number[] = [183, 181, 188, 203, 136, 178, 208] // ideal value for each angle
+            const squat_red_variances : number[] =      [30, 30, 30, 35, 35, 10, 10] // allowed variances for each angle, greater -> red
+            const squat_yellow_variances : number[] =   [25, 25, 28, 32, 32, 15, 15] // allowed variances for each angle, greater -> yellow
 
+            if (i > 1) {
             if (Math.abs(squat_ideals[i] - ANGLE) > squat_red_variances[i]) { // red
                 if (dir == "right" && rightPathRef.current != null) {
                     getPathSeg(rightPathRef.current, i, 'red')
@@ -175,6 +189,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
                 if (segColors[i+1].color != 'red') {
                     segColors[i+1] = {color: 'yellow'}
                 }
+            }
             }
         }
         AngletoColor(ang, dir, "Squat")
@@ -269,6 +284,19 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString }) => {
                 </Canvas>
                 <View style={styles.picturecanvas}>
                     {
+                        warnings.map((value) =>  {
+                            {
+                                return <View style = {styles.warningcontainer}>
+                                    <Text style = {{
+                                    fontSize: 20,
+                                    color: 'white',
+                                }}> {value}
+                                    </Text>
+                                </View>
+                            }
+                        })
+                    }
+                    {
                         vertebraePoints.map((value) =>  {
                             {
                             if (myShowIcons) {
@@ -332,8 +360,18 @@ const styles = StyleSheet.create({
         height: '100%',
         width: '100%',
         overflow: 'hidden',
+        alignItems: 'center',
     },
     path: {
         top: 100,
+    },
+    warningcontainer: {
+        backgroundColor: 'red',
+        borderRadius: 20,
+        width: '80%',
+        height: 30,
+        marginTop: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
