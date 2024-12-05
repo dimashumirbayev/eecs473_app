@@ -17,6 +17,10 @@ type Coordinate = {
 }
 
 const NUM_IMUS = 8
+const global_angles : number[] = [0, 0, 0, 0, 0, 0, 0]
+export function get_global_angles() : number[] {
+    return global_angles
+}
 
 export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) => {
 
@@ -47,6 +51,8 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
         const angle = Number(dataStringSplit[i])
         angles.push(angle)
 
+        const distances : number[] = [] // should be 8 distances
+
         const deltaX = (myOrientation) ? - Math.cos(angle) : Math.cos(angle)
         const deltaY = -Math.sin(angle) // negative to account for flipped coordinate system
         deltas.push({x: deltaX, y: deltaY})
@@ -67,7 +73,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
     const overallDx = Math.abs(coords[coords.length-1].x - coords[0].x)
     const overallDy = coords[coords.length-1].y - coords[0].y
     const overallAngle = rad2deg(Math.atan(overallDy / overallDx))
-    console.log("overallAngle = ", overallAngle)
+    // console.log("overallAngle = ", overallAngle)
     if (overallAngle < 50) {
         warnings.push("Excessive Forward Lean")
     }
@@ -135,6 +141,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
     }
 
     let segColors : {color: string}[] = new Array(NUM_IMUS).fill({color: 'green'})
+
     // 6. TODO: angle stuff
     for (let i = 0; i < NUM_IMUS - 1; i++) {
         // Angle for group i -> group = 2 adjacent segments
@@ -152,15 +159,28 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
             dir = "right"
         }
 
+        // Calculate left-angles and assign to global variable dimash
+
+
         /////////////////////////////////////////////////////////////////////////////
-        function AngletoColor(angle : number, dir : string, mode : string) {
+        function AngletoColor(angle : number, dir : string, mode : string, index : number) {
             const ANGLE = dir == "left"? angle : (360 - angle) // angle expressed in left direction
+            global_angles[i] = ANGLE
+
             if (source == "recordings") {
                 console.log("Angle", i, "=", ANGLE, "left")
             }
 
             // "183 181 188 203 136 178 208"
-            const ideals : number[] = getCalib()     // [183, 181, 188, 203, 136, 178, 208] // ideal value for each angle
+            // let calib : number[] = getCalib()           // ideal value for each angle in degrees
+            // let ideals : number[] = []
+            // calib.map((value, index) => {
+            //     ideals[index] = value
+            // })
+            const ideals : number[] = getCalib()
+
+            // console.log("ideals = ", ideals)
+
             const squat_red_variances : number[] =      [30, 30, 30, 35, 35, 10, 10] // allowed variances for each angle, greater -> red
             const squat_yellow_variances : number[] =   [25, 25, 28, 32, 32, 15, 15] // allowed variances for each angle, greater -> yellow
 
@@ -190,7 +210,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
                 }
             }
         }
-        AngletoColor(ang, dir, "Squat")
+        AngletoColor(ang, dir, "Squat", i)
 
         /////////////////////////////////////////////////////////////////////////////
 

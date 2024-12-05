@@ -6,12 +6,19 @@ import useBLE from "@/components/BLEstuff";
 import { SettingsInit } from "./settings";
 import { DataViewer } from "@/components/DataViewer";
 
+let global_data : string = "0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00"
+export function get_global_data() {
+    return global_data
+}
+
 export default function HomeScreen() {
 
     const { startRecording, stopRecording, writeDataLine, RecordingsInit } = useContext(RecordingContext)
     const [isRecording, setIsRecording] = useState(false);
     const [mode, setMode] = useState("Squat")
     const { connectedDevice, requestPermissions, scanForPeripherals, allDevices, connectToDevice, data, updata } = useBLE()
+
+    global_data = data
 
     SettingsInit()
     RecordingsInit()

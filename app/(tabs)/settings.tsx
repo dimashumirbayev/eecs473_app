@@ -1,23 +1,31 @@
 import { Text, View, StyleSheet, Switch, Alert, Linking, ScrollView, TouchableOpacity, Modal } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { RecordingContext } from "@/components/RecordingManager"
-import { DataViewer } from "@/components/DataViewer";
-import useBLE from "@/components/BLEstuff";
+import { DataViewer, get_global_angles } from "@/components/DataViewer";
+import { get_global_data } from "./index";
 
 let mutex = new Mutex();
 let initialized = false
 let calib : number[] = [0, 0, 0, 0, 0, 0, 0]
 
 // Used for initialization ONLY
-let o = false //  orientation
+let o = false // orientation
 let a = false // auto-delete
 let i = false // show icons
 
 export default function SettingsScreen() {
 
-    const { data } = useBLE() // BLE data
+    const [reloadCount, setReloadCount] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+        setReloadCount((prevCount) => prevCount + 1); // Increment to simulate reloading
+    }, 100); // Reload every 5 seconds
+        // Cleanup the interval when the component is unmounted
+        return () => clearInterval(interval);
+    }, []);
 
     const [orientationVar, setOrientationVar] = useState(o)
     const [autoDeleteVar, setAutoDeleteVar] = useState(a)
@@ -41,13 +49,14 @@ export default function SettingsScreen() {
                         </Text>
                     </View>
                     <View style={styles.DataViewerContainer}>
-                        <DataViewer dataString = {data} source = {"settings"}>
+                        <DataViewer dataString = {get_global_data()} source = {"settings"}>
                         </DataViewer>
                     </View>
                     <TouchableOpacity
                         style = {styles.calibcalibbutton}
                         onPress = {() => {
-                            setCalib(data)
+                            setCalib(get_global_angles())
+                            // console.log("trying to calibrate with", data)
                         }}
                     >
                         <Text style={{color: 'white', fontSize: 18}}> Calibrate </Text>
@@ -158,9 +167,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     text: {
-        // color: '#fff',
         fontSize: 18,
-        // fontWeight: 'bold',
     },
     switchContainer: {
         flexDirection: "row",
@@ -341,30 +348,7 @@ export async function SettingsInit() {
     mutex.release()
 }
 
-async function setAutoDelete(val : boolean) {
-    await SettingsInit()
-    await mutex.acquire()
-
-    const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
-    const FileStatus = await FileSystem.getInfoAsync(FilePath)
-    if (FileStatus.exists) {
-        await FileSystem.writeAsStringAsync(FilePath, String(val))
-        console.log("set auto_delete =", String(val))
-    }
-    a = val
-
-    mutex.release()
-}
-
-// Only needs to be called during stopRecording()
-export async function getAutoDelete() : Promise<boolean> {
-    await SettingsInit()
-    await mutex.acquire()
-
-    const val = a
-    mutex.release()
-    return val
-}
+///////////////////////////////////////////////////// Orientation /////////////////////////////////////////////////////
 
 async function setOrientation(val : string) {
     await SettingsInit()
@@ -377,48 +361,6 @@ async function setOrientation(val : string) {
         console.log("set orientation =", String(val))
     }
     o = (val == "right")
-
-    mutex.release()
-}
-
-// Only needs to be called during startup
-export function getOrientation() : boolean {
-    // await SettingsInit()
-    // await mutex.acquire()
-
-    return o // ? "right" : "left"
-    // mutex.release()
-    // return val
-}
-
-async function setShowIcons(setVal : boolean) {
-    await SettingsInit()
-    await mutex.acquire()
-
-    const FilePath = FileSystem.documentDirectory + "settings/icon"
-    const FileStatus = await FileSystem.getInfoAsync(FilePath)
-    if (FileStatus.exists) {
-        await FileSystem.writeAsStringAsync(FilePath, String(setVal))
-        console.log("set icon =", String(setVal))
-    }
-    i = setVal
-
-    mutex.release()
-}
-
-export function getShowIcons() : boolean {
-    return i
-}
-
-// Reads the file and stores value in var a
-async function getAutoDeleteFile() {
-    await SettingsInit()
-    await mutex.acquire()
-
-    const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
-    const val = await FileSystem.readAsStringAsync(FilePath)
-    a = Boolean(val == "true")
-    console.log("a =", a)
 
     mutex.release()
 }
@@ -436,6 +378,68 @@ async function getOrientationFile() {
     mutex.release()
 }
 
+// Only needs to be called during startup
+export function getOrientation() : boolean {
+    return o // ? "right" : "left"
+}
+
+///////////////////////////////////////////////////// Auto Delete /////////////////////////////////////////////////////
+
+async function setAutoDelete(val : boolean) {
+    await SettingsInit()
+    await mutex.acquire()
+
+    const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
+    const FileStatus = await FileSystem.getInfoAsync(FilePath)
+    if (FileStatus.exists) {
+        await FileSystem.writeAsStringAsync(FilePath, String(val))
+        console.log("set auto_delete =", String(val))
+    }
+    a = val
+
+    mutex.release()
+}
+
+// Reads the file and stores value in var a
+async function getAutoDeleteFile() {
+    await SettingsInit()
+    await mutex.acquire()
+
+    const FilePath = FileSystem.documentDirectory + "settings/auto_delete"
+    const val = await FileSystem.readAsStringAsync(FilePath)
+    a = Boolean(val == "true")
+    console.log("a =", a)
+
+    mutex.release()
+}
+
+// Only needs to be called during stopRecording()
+export async function getAutoDelete() : Promise<boolean> {
+    await SettingsInit()
+    await mutex.acquire()
+
+    const val = a
+    mutex.release()
+    return val
+}
+
+//////////////////////////////////////////////////////// Icons ////////////////////////////////////////////////////////
+
+async function setShowIcons(setVal : boolean) {
+    await SettingsInit()
+    await mutex.acquire()
+
+    const FilePath = FileSystem.documentDirectory + "settings/icon"
+    const FileStatus = await FileSystem.getInfoAsync(FilePath)
+    if (FileStatus.exists) {
+        await FileSystem.writeAsStringAsync(FilePath, String(setVal))
+        console.log("set icon =", String(setVal))
+    }
+    i = setVal
+
+    mutex.release()
+}
+
 // Reads the file and stores value in var i
 async function getIconFile() {
     await SettingsInit()
@@ -449,44 +453,61 @@ async function getIconFile() {
     mutex.release()
 }
 
-///////////////////////////////////////////////////// Orientation /////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////// Auto Delete /////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////// Icons ////////////////////////////////////////////////////////
+export function getShowIcons() : boolean {
+    return i
+}
 
 ///////////////////////////////////////////////////// Calibration /////////////////////////////////////////////////////
 
 // Called by 'Calibrate' button in Calibration Modal
-async function setCalib(val : string) {
+async function setCalib(val : number[]) {
     await SettingsInit()
     await mutex.acquire()
 
+    val.map((value, index) => {
+        calib[index] = value
+    })
+
     const FilePath = FileSystem.documentDirectory + "settings/calibration"
-    await FileSystem.writeAsStringAsync(FilePath, val)
-    calib = string2calib(val)
+    await FileSystem.writeAsStringAsync(FilePath, calib2string(val))
+    console.log("calib = ", calib)
 
     mutex.release()
 }
 
 // Reads file system and sets value of 'calib'
 async function getCalibFile() {
+    await SettingsInit()
+    await mutex.acquire()
+
     const FilePath = FileSystem.documentDirectory + "settings/calibration"
     const val = await FileSystem.readAsStringAsync(FilePath)
 
-    calib = string2calib(val)
+    // console.log("FILE VERSION OF CALIB = ", val)
+
+    let calib_split = val.split(",")
+
+    calib_split.map((value, index) => {
+        calib[index] = Number(value)
+    })
+
+    mutex.release()
 }
 
 // Returns value of 'calib'
 export function getCalib() : number[] {
+    // console.log("getCalib returned", calib)
     return calib
 }
 
-function string2calib(val : string) : number[] {
-    const split = val.split(" ")
-    let nums : number[] = []
-    split.map((value) => {
-        nums.push(Number(value))
+function calib2string(val : number[]) : string {
+    let str = ""
+    val.map((value, index) => {
+        if (index == 0) {
+            str += String(value)
+        } else {
+            str += ("," + String(value))
+        }
     })
-    return nums
+    return str
 }
