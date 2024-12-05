@@ -51,10 +51,10 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
         const angle = Number(dataStringSplit[i])
         angles.push(angle)
 
-        const distances : number[] = [] // should be 8 distances
+        const distances : number[] = [1.75, 1.75, 1.75, 4.75, 2.375, 2.375, 2.375, 2.375] // should be 8 distances (last one is fake)
 
-        const deltaX = (myOrientation) ? - Math.cos(angle) : Math.cos(angle)
-        const deltaY = -Math.sin(angle) // negative to account for flipped coordinate system
+        const deltaX = ((myOrientation) ? - Math.cos(angle) : Math.cos(angle)) // * distances[i]
+        const deltaY = (-Math.sin(angle)) // * distances[i] // negative to account for flipped coordinate system
         deltas.push({x: deltaX, y: deltaY})
 
         const prevCoord = coords[coords.length - 1]
@@ -71,9 +71,9 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
     // Detection for Excessive Forward Lean
     let warnings : string[] = []
     const overallDx = Math.abs(coords[coords.length-1].x - coords[0].x)
-    const overallDy = coords[coords.length-1].y - coords[0].y
+    const overallDy = -1 * coords[coords.length-1].y - coords[0].y
     const overallAngle = rad2deg(Math.atan(overallDy / overallDx))
-    // console.log("overallAngle = ", overallAngle)
+    console.log("overallAngle = ", overallAngle)
     if (overallAngle < 50) {
         warnings.push("Excessive Forward Lean")
     }
@@ -142,6 +142,8 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
 
     let segColors : {color: string}[] = new Array(NUM_IMUS).fill({color: 'green'})
 
+    let variances : number[] = []
+
     // 6. TODO: angle stuff
     for (let i = 0; i < NUM_IMUS - 1; i++) {
         // Angle for group i -> group = 2 adjacent segments
@@ -160,53 +162,60 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
         }
 
         // Calculate left-angles and assign to global variable dimash
-
+        let angle_sum = 0
+        angles.map((value) => {
+            angle_sum += value
+        })
+        angle_sum /= angles.length
+        // console.log("angle sum = ", rad2deg(angle_sum), rad2deg(angles[0]))
 
         /////////////////////////////////////////////////////////////////////////////
         function AngletoColor(angle : number, dir : string, mode : string, index : number) {
             const ANGLE = dir == "left"? angle : (360 - angle) // angle expressed in left direction
-            global_angles[i] = ANGLE
+            global_angles[index] = ANGLE
 
             if (source == "recordings") {
-                console.log("Angle", i, "=", ANGLE, "left")
+                console.log("Angle", index, "=", ANGLE, "left")
             }
 
-            // "183 181 188 203 136 178 208"
-            // let calib : number[] = getCalib()           // ideal value for each angle in degrees
-            // let ideals : number[] = []
-            // calib.map((value, index) => {
-            //     ideals[index] = value
-            // })
             const ideals : number[] = getCalib()
-
             // console.log("ideals = ", ideals)
 
-            const squat_red_variances : number[] =      [30, 30, 30, 35, 35, 10, 10] // allowed variances for each angle, greater -> red
-            const squat_yellow_variances : number[] =   [25, 25, 28, 32, 32, 15, 15] // allowed variances for each angle, greater -> yellow
+            const red_variances_high : number[] = [180, 180, 180, 180, 180, 180, 180]
+            const red_variances_low : number[] = [-180, -180, -180, -180, -180, -180, -180]
+            const yellow_variances_high : number[] = [15, 15, 15, 15, 15, 15, 15]
+            const yellow_variances_low : number[] = [-15, -15, -15, -15, -15, -15, -15]
+            const diff = ANGLE - ideals[index]
 
-            if (Math.abs(ideals[i] - ANGLE) > squat_red_variances[i]) { // red
+            if (index == 0) {
+                // console.log("diff = ", diff)
+            }
+            variances.push(diff)
+
+            if ((diff > red_variances_high[index]) || (diff < red_variances_low[index])) {
                 if (dir == "right" && rightPathRef.current != null) {
-                    getPathSeg(rightPathRef.current, i, 'red')
-                    getPathSeg(rightPathRef.current, i+1, 'red')
+                    getPathSeg(rightPathRef.current, index, 'red')
+                    getPathSeg(rightPathRef.current, index+1, 'red')
                 } else if (dir == "left" && leftPathRef.current != null) {
-                    getPathSeg(leftPathRef.current, i, 'red')
-                    getPathSeg(leftPathRef.current, i+1, 'red')
+                    getPathSeg(leftPathRef.current, index, 'red')
+                    getPathSeg(leftPathRef.current, index+1, 'red')
                 }
-                segColors[i] = {color: 'red'}
-                segColors[i+1] = {color: 'red'}
-            } else if (Math.abs(ideals[i] - ANGLE) > squat_yellow_variances[i]) { // yellow
+                segColors[index] = {color: 'red'}
+                segColors[index+1] = {color: 'red'}
+            } else if ((diff > yellow_variances_high[index]) || (diff < yellow_variances_low[index])) {
+                // console.log("index ", index, "thinks diff = ", diff, "high = ", yellow_variances_high[index], "low = ", yellow_variances_low[index])
                 if (dir == "right" && rightPathRef.current != null) {
-                    getPathSeg(rightPathRef.current, i, 'yellow')
-                    getPathSeg(rightPathRef.current, i+1, 'yellow')
+                    getPathSeg(rightPathRef.current, index, 'yellow')
+                    getPathSeg(rightPathRef.current, index+1, 'yellow')
                 } else if (dir == "left" && leftPathRef.current != null) {
-                    getPathSeg(leftPathRef.current, i, 'yellow')
-                    getPathSeg(leftPathRef.current, i+1, 'yellow')
+                    getPathSeg(leftPathRef.current, index, 'yellow')
+                    getPathSeg(leftPathRef.current, index+1, 'yellow')
                 }
-                if (segColors[i].color != 'red') {
-                    segColors[i] = {color: 'yellow'}
+                if (segColors[index].color != 'red') {
+                    segColors[index] = {color: 'yellow'}
                 }
-                if (segColors[i+1].color != 'red') {
-                    segColors[i+1] = {color: 'yellow'}
+                if (segColors[index+1].color != 'red') {
+                    segColors[index+1] = {color: 'yellow'}
                 }
             }
         }
@@ -214,30 +223,8 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
 
         /////////////////////////////////////////////////////////////////////////////
 
-        // if (ang < 130) { // red
-        //     if (dir == "right" && rightPathRef.current != null) {
-        //         getPathSeg(rightPathRef.current, i, 'red')
-        //         getPathSeg(rightPathRef.current, i+1, 'red')
-        //     } else if (dir == "left" && leftPathRef.current != null) {
-        //         getPathSeg(leftPathRef.current, i, 'red')
-        //         getPathSeg(leftPathRef.current, i+1, 'red')
-        //     }
-        // } else if (ang < 150) { // yellow
-        //     if (dir == "right" && rightPathRef.current != null) {
-        //         getPathSeg(rightPathRef.current, i, 'yellow')
-        //         getPathSeg(rightPathRef.current, i+1, 'yellow')
-        //     } else if (dir == "left" && leftPathRef.current != null) {
-        //         getPathSeg(leftPathRef.current, i, 'yellow')
-        //         getPathSeg(leftPathRef.current, i+1, 'yellow')
-        //     }
-        //     if (segColors[i].color != 'red') {
-        //         segColors[i] = {color: 'yellow'}
-        //     }
-        //     if (segColors[i+1].color != 'red') {
-        //         segColors[i+1] = {color: 'yellow'}
-        //     }
-        // }
     }
+    // console.log(variances)
 
     // 7. Interpolate along SkPath to place vertebrae
     type VertebraeCoord = {
