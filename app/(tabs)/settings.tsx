@@ -443,7 +443,7 @@ async function getIconFile() {
 
     const FilePath = FileSystem.documentDirectory + "settings/icon"
     const val = await FileSystem.readAsStringAsync(FilePath)
-    i = Boolean(val == "true")
+    i = Boolean(val)
     console.log("i =", i)
 
     mutex.release()
@@ -459,9 +459,14 @@ async function getIconFile() {
 
 // Called by 'Calibrate' button in Calibration Modal
 async function setCalib(val : string) {
+    await SettingsInit()
+    await mutex.acquire()
+
     const FilePath = FileSystem.documentDirectory + "settings/calibration"
     await FileSystem.writeAsStringAsync(FilePath, val)
     calib = string2calib(val)
+
+    mutex.release()
 }
 
 // Reads file system and sets value of 'calib'
