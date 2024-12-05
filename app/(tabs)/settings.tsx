@@ -8,24 +8,35 @@ import { get_global_data } from "./index";
 
 let mutex = new Mutex();
 let initialized = false
-let calib : number[] = [0, 0, 0, 0, 0, 0, 0]
 
 // Used for initialization ONLY
 let o = false // orientation
 let a = false // auto-delete
 let i = false // show icons
 
+// Calibration
+let calib : number[] = [0, 0, 0, 0, 0, 0, 0]
+let timer : number = 10
+let timer_started : boolean = false
+
 export default function SettingsScreen() {
 
     const [reloadCount, setReloadCount] = useState(0);
-
     useEffect(() => {
         const interval = setInterval(() => {
         setReloadCount((prevCount) => prevCount + 1); // Increment to simulate reloading
-    }, 100); // Reload every 5 seconds
-        // Cleanup the interval when the component is unmounted
+    }, 100); // Reload every 100 ms
         return () => clearInterval(interval);
     }, []);
+
+    if (timer_started) {
+        timer -= 0.1
+    }
+    if (timer <= -1) {
+        setCalib(get_global_angles())
+        timer = 10
+        timer_started = false
+    }
 
     const [orientationVar, setOrientationVar] = useState(o)
     const [autoDeleteVar, setAutoDeleteVar] = useState(a)
@@ -53,13 +64,28 @@ export default function SettingsScreen() {
                         </DataViewer>
                     </View>
                     <TouchableOpacity
-                        style = {styles.calibcalibbutton}
+                        style = {{
+                            backgroundColor: (timer_started && timer < 0) ? 'red' : '#1EB1FC',
+                            borderRadius: 20,
+                            marginLeft: 10,
+                            marginRight: 10,
+                            marginBottom: 10,
+                            height: 68,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
                         onPress = {() => {
-                            setCalib(get_global_angles())
-                            // console.log("trying to calibrate with", data)
+                            if (!timer_started) {
+                                timer_started = true
+                            }
                         }}
                     >
-                        <Text style={{color: 'white', fontSize: 18}}> Calibrate </Text>
+                        <Text style={{color: 'white', fontSize: 18}}>
+                            { timer_started ?
+                                timer < 0? "Calibrating" : "Calibration in " + String(Math.ceil(timer)) + " sec"
+                                : "Start Calibration"
+                            }
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style = {styles.calibexitbutton}

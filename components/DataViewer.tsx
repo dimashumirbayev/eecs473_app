@@ -192,7 +192,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
             }
             variances.push(diff)
 
-            if ((diff > red_variances_high[index]) || (diff < red_variances_low[index])) {
+            if ((diff > red_variances_high[index]) || (diff < red_variances_low[index]) || (index == 0 && ((angles[0]-angle_sum) > 15))) {
                 if (dir == "right" && rightPathRef.current != null) {
                     getPathSeg(rightPathRef.current, index, 'red')
                     getPathSeg(rightPathRef.current, index+1, 'red')
@@ -202,7 +202,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
                 }
                 segColors[index] = {color: 'red'}
                 segColors[index+1] = {color: 'red'}
-            } else if ((diff > yellow_variances_high[index]) || (diff < yellow_variances_low[index])) {
+            } else if ((diff > yellow_variances_high[index]) || (diff < yellow_variances_low[index]) || (index == 0 && ((angles[0]-angle_sum) > 10))) {
                 // console.log("index ", index, "thinks diff = ", diff, "high = ", yellow_variances_high[index], "low = ", yellow_variances_low[index])
                 if (dir == "right" && rightPathRef.current != null) {
                     getPathSeg(rightPathRef.current, index, 'yellow')
