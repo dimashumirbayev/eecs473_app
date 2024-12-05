@@ -78,7 +78,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.DataViewerContainer}>
                 {(connectedDevice != null) &&
-                    <DataViewer dataString = {data} source = {"home"}>
+                    <DataViewer dataString = {data} source = {"home"} mode={mode}>
                     </DataViewer>
                 }
             </View>

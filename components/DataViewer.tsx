@@ -9,6 +9,7 @@ import { getOrientation, getShowIcons, getCalib } from "@/app/(tabs)/settings";
 interface DataViewerProps {
     dataString: string;
     source: string,
+    mode: string,
 }
 
 type Coordinate = {
@@ -22,7 +23,7 @@ export function get_global_angles() : number[] {
     return global_angles
 }
 
-export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) => {
+export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source, mode }) => {
 
     const [myShowIcons, setMyShowIcons] = useState(false)
     const [myOrientation, setMyOrientation] = useState(false) // left by default
@@ -74,7 +75,9 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
     const overallDy = -1 * coords[coords.length-1].y - coords[0].y
     const overallAngle = rad2deg(Math.atan(overallDy / overallDx))
     console.log("overallAngle = ", overallAngle)
-    if (overallAngle < 50) {
+    if (mode == "Squat" && overallAngle < 50) {
+        warnings.push("Excessive Forward Lean")
+    } else if (mode == "Deadlift" && overallAngle < 40) {
         warnings.push("Excessive Forward Lean")
     }
 
@@ -181,8 +184,8 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
             const ideals : number[] = getCalib()
             // console.log("ideals = ", ideals)
 
-            const red_variances_high : number[] = [180, 180, 180, 180, 180, 180, 180]
-            const red_variances_low : number[] = [-180, -180, -180, -180, -180, -180, -180]
+            const red_variances_high : number[] = [20, 20, 20, 20, 20, 20, 20]
+            const red_variances_low : number[] = [-20, -20, -20, -20, -20, -20, -20]
             const yellow_variances_high : number[] = [15, 15, 15, 15, 15, 15, 15]
             const yellow_variances_low : number[] = [-15, -15, -15, -15, -15, -15, -15]
             const diff = ANGLE - ideals[index]

@@ -69,7 +69,7 @@ export default function RecordingsScreen() {
                             <Text style={styles.optionstext}> Mode: {selectedRecording.mode} </Text>
                         </View>
                         <View style={styles.DataViewerContainer}>
-                            <DataViewer dataString={playbackString} source={"recordings"}>
+                            <DataViewer dataString={playbackString} source={"recordings"} mode={selectedRecording.mode}>
                             </DataViewer>
                             <TouchableOpacity
                                 style = {styles.PauseContainer}

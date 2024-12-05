@@ -55,12 +55,12 @@ export default function SettingsScreen() {
                     <View style={styles.calibinstructioncontainer}>
                         <Text style={{marginTop: 10, fontSize: 22, color: 'white'}}> Instructions </Text>
                         <Text style={{marginTop: 10, marginLeft: 10, marginRight: 10, fontSize: 18, color: 'white'}}>
-                            Calibrate the device by standing in a relaxed, neutral position and press 'Calibrate'.
+                            Calibrate the device by standing in backsquat position with a barbell.
                             To achieve best results, calibrate the device before each workout.
                         </Text>
                     </View>
                     <View style={styles.DataViewerContainer}>
-                        <DataViewer dataString = {get_global_data()} source = {"settings"}>
+                        <DataViewer dataString = {get_global_data()} source = {"settings"} mode={"Settings"}>
                         </DataViewer>
                     </View>
                     <TouchableOpacity
