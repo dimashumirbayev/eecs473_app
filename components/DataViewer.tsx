@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Canvas, Path, Skia, SkPath } from "@shopify/react-native-skia";
 import { curveBasis, curveLinear, line } from 'd3';
 import { Ionicons } from "@expo/vector-icons";
-import { getOrientation, getShowIcons } from "@/app/(tabs)/settings";
+import { getOrientation, getShowIcons, getCalib } from "@/app/(tabs)/settings";
 
 interface DataViewerProps {
     dataString: string;
@@ -31,7 +31,6 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
         }, [myShowIcons, myOrientation])
     );
 
-    // const dataString = "0.78 0.83 1.24 0.37 1.7 0.48 0.73 0.96 "
     const dataStringSplit = dataString.split(" ")
 
     const pathRef = useRef<SkPath | null>(null);
@@ -69,7 +68,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
     const overallDy = coords[coords.length-1].y - coords[0].y
     const overallAngle = rad2deg(Math.atan(overallDy / overallDx))
     console.log("overallAngle = ", overallAngle)
-    if (overallAngle < 50) { // 55
+    if (overallAngle < 50) {
         warnings.push("Excessive Forward Lean")
     }
 
@@ -160,12 +159,12 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
                 console.log("Angle", i, "=", ANGLE, "left")
             }
 
-            const squat_ideals : number[] = [183, 181, 188, 203, 136, 178, 208] // ideal value for each angle
+            // "183 181 188 203 136 178 208"
+            const ideals : number[] = getCalib()     // [183, 181, 188, 203, 136, 178, 208] // ideal value for each angle
             const squat_red_variances : number[] =      [30, 30, 30, 35, 35, 10, 10] // allowed variances for each angle, greater -> red
             const squat_yellow_variances : number[] =   [25, 25, 28, 32, 32, 15, 15] // allowed variances for each angle, greater -> yellow
 
-            if (i > 1) {
-            if (Math.abs(squat_ideals[i] - ANGLE) > squat_red_variances[i]) { // red
+            if (Math.abs(ideals[i] - ANGLE) > squat_red_variances[i]) { // red
                 if (dir == "right" && rightPathRef.current != null) {
                     getPathSeg(rightPathRef.current, i, 'red')
                     getPathSeg(rightPathRef.current, i+1, 'red')
@@ -175,7 +174,7 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
                 }
                 segColors[i] = {color: 'red'}
                 segColors[i+1] = {color: 'red'}
-            } else if (Math.abs(squat_ideals[i] - ANGLE) > squat_yellow_variances[i]) { // yellow
+            } else if (Math.abs(ideals[i] - ANGLE) > squat_yellow_variances[i]) { // yellow
                 if (dir == "right" && rightPathRef.current != null) {
                     getPathSeg(rightPathRef.current, i, 'yellow')
                     getPathSeg(rightPathRef.current, i+1, 'yellow')
@@ -189,7 +188,6 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
                 if (segColors[i+1].color != 'red') {
                     segColors[i+1] = {color: 'yellow'}
                 }
-            }
             }
         }
         AngletoColor(ang, dir, "Squat")
@@ -264,63 +262,59 @@ export const DataViewer: React.FC<DataViewerProps> = ({ dataString, source }) =>
     }
 
     return (
-
-            <View style={styles.container}>
-                <Canvas style={styles.canvas}>
-                    {pathRef.current && (
-                        <Path path={pathRef.current} color="blue" style="stroke" strokeWidth={2} />
-                    )}
-                    {/* {leftPathRef.current && (
-                        <Path path={leftPathRef.current} color="green" style="stroke" strokeWidth={2} />
-                    )}
-                    {rightPathRef.current && (
-                        <Path path={rightPathRef.current} color="red" style="stroke" strokeWidth={2} />
-                    )} */}
+        <View style={styles.container}>
+            <Canvas style={styles.canvas}>
+                {pathRef.current && (
+                    <Path path={pathRef.current} color="blue" style="stroke" strokeWidth={2} />
+                )}
+                {/* {leftPathRef.current && (
+                    <Path path={leftPathRef.current} color="green" style="stroke" strokeWidth={2} />
+                )}
+                {rightPathRef.current && (
+                    <Path path={rightPathRef.current} color="red" style="stroke" strokeWidth={2} />
+                )} */}
+                { source != "settings" && (
+                    coloredPaths.map((value) => {
+                        return <Path path={value.path} color={value.color} style="stroke" strokeWidth={3} />
+                    }))
+                }
+            </Canvas>
+            <View style={styles.picturecanvas}>
+                { source != "settings" && (warnings.map((value) =>  {
                     {
-                        coloredPaths.map((value) => {
-                            return <Path path={value.path} color={value.color} style="stroke" strokeWidth={3} />
-                        })
-                    }
-                </Canvas>
-                <View style={styles.picturecanvas}>
-                    {
-                        warnings.map((value) =>  {
-                            {
-                                return <View style = {styles.warningcontainer}>
-                                    <Text style = {{
-                                    fontSize: 20,
-                                    color: 'white',
-                                }}> {value}
-                                    </Text>
-                                </View>
+                        return <View style = {styles.warningcontainer}>
+                            <Text style = {{
+                            fontSize: 20,
+                            color: 'white',
+                        }}> {value}
+                            </Text>
+                        </View>
+                    }}))
+                }
+                {
+                    vertebraePoints.map((value) =>  {
+                        {
+                        if (myShowIcons) {
+                            return <View style={{
+                                position: 'absolute',
+                                top: value.y - 12,
+                                left: value.x - 17,
+                            }}>
+                                <Ionicons
+                                name={"tablet-landscape-outline"}
+                                size={25}
+                                color={ (source == "settings") ? "green" : value.color}
+                                style={{
+                                    transform: [{ rotate: (value.tilt + 90 )+ 'deg' }]
+                                }}
+                                />
+                            </View>
                             }
-                        })
-                    }
-                    {
-                        vertebraePoints.map((value) =>  {
-                            {
-                            if (myShowIcons) {
-                                return <View style={{
-                                    position: 'absolute',
-                                    top: value.y - 12,
-                                    left: value.x - 17,
-                                }}>
-                                    <Ionicons
-                                    name={"tablet-landscape-outline"}
-                                    size={25}
-                                    color={value.color}
-                                    style={{
-                                        transform: [{ rotate: (value.tilt + 90 )+ 'deg' }]
-                                    }}
-                                    />
-                                </View>
-                                }
-                            }
-                        })
-                    }
-                </View>
+                        }
+                    })
+                }
             </View>
-
+        </View>
     )
 }
 

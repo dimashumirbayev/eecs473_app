@@ -1,11 +1,14 @@
-import { Text, View, StyleSheet, Switch, Alert, Linking, ScrollView, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, Switch, Alert, Linking, ScrollView, TouchableOpacity, Modal } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Mutex } from "async-mutex";
 import { useState, useContext } from "react";
 import { RecordingContext } from "@/components/RecordingManager"
+import { DataViewer } from "@/components/DataViewer";
+import useBLE from "@/components/BLEstuff";
 
 let mutex = new Mutex();
 let initialized = false
+let calib : number[] = [0, 0, 0, 0, 0, 0, 0]
 
 // Used for initialization ONLY
 let o = false //  orientation
@@ -14,14 +17,51 @@ let i = false // show icons
 
 export default function SettingsScreen() {
 
+    const { data } = useBLE() // BLE data
+
     const [orientationVar, setOrientationVar] = useState(o)
     const [autoDeleteVar, setAutoDeleteVar] = useState(a)
     const [showIconsVar, setShowIconsVar] = useState(i)
+    const [calibModalVisible, setCalibModalVisible] = useState(false)
 
     const { deleteAllFiles } = useContext(RecordingContext)
 
     return (
         <ScrollView style = {styles.container}>
+            <Modal visible={calibModalVisible} animationType="slide">
+                <View style={styles.calibheader}>
+                    <Text style={styles.calibheadertext}> Device Calibration </Text>
+                </View>
+                <ScrollView style={styles.calibcontainer}>
+                    <View style={styles.calibinstructioncontainer}>
+                        <Text style={{marginTop: 10, fontSize: 22, color: 'white'}}> Instructions </Text>
+                        <Text style={{marginTop: 10, marginLeft: 10, marginRight: 10, fontSize: 18, color: 'white'}}>
+                            Calibrate the device by standing in a relaxed, neutral position and press 'Calibrate'.
+                            To achieve best results, calibrate the device before each workout.
+                        </Text>
+                    </View>
+                    <View style={styles.DataViewerContainer}>
+                        <DataViewer dataString = {data} source = {"settings"}>
+                        </DataViewer>
+                    </View>
+                    <TouchableOpacity
+                        style = {styles.calibcalibbutton}
+                        onPress = {() => {
+                            setCalib(data)
+                        }}
+                    >
+                        <Text style={{color: 'white', fontSize: 18}}> Calibrate </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style = {styles.calibexitbutton}
+                        onPress = {() => {
+                            setCalibModalVisible(false)
+                        }}
+                    >
+                        <Text style={{color: 'white', fontSize: 18}}> Exit </Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </Modal>
             <View style = {styles.switchContainer}>
                 <Text style = {styles.text} > Orientation </Text>
                 <Switch
@@ -52,6 +92,16 @@ export default function SettingsScreen() {
                         setAutoDeleteVar(!autoDeleteVar)
                     }}>
                 </Switch>
+            </View>
+            <View style={styles.CalibContainer}>
+                <TouchableOpacity
+                    style = {styles.DeleteButton}
+                    onPress = {() => {
+                        setCalibModalVisible(true)
+                    }}
+                >
+                    <Text style = {{fontSize: 18,}}> Calibrate Device </Text>
+                </TouchableOpacity>
             </View>
             <View style={styles.DeleteContainer}>
                 <TouchableOpacity
@@ -128,6 +178,13 @@ const styles = StyleSheet.create({
         margin: 5,
         padding: 10,
     },
+    CalibContainer: {
+        backgroundColor: '#1EB1FC',
+        borderRadius: 20,
+        height: 68,
+        margin: 5,
+        padding: 10,
+    },
     DeleteButton: {
         width: '100%',
         height: '100%',
@@ -166,7 +223,58 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         alignItems: 'center',
         justifyContent: 'center',
-    }
+    },
+    calibheader: {
+        backgroundColor: 'white',
+        height: 92,
+        alignItems: 'center',
+    },
+    calibheadertext: {
+        fontSize: 24,
+        position: 'absolute',
+        top: 50,
+    },
+    calibcontainer: {
+        flex: 1,
+        backgroundColor: '#25292e',
+    },
+    calibexitbutton: {
+        backgroundColor: 'gray',
+        borderRadius: 20,
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 10,
+        height: 68,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    calibcalibbutton: {
+        backgroundColor: '#1EB1FC',
+        borderRadius: 20,
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 10,
+        height: 68,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    calibinstructioncontainer: {
+        backgroundColor: 'gray',
+        borderRadius: 20,
+        marginLeft: 10,
+        marginRight: 10,
+        marginTop: 10,
+        height: 150,
+        alignItems: 'center',
+    },
+    DataViewerContainer: {
+        backgroundColor: '#FFFFF0',
+        margin: 10,
+        height: 400,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });
 
 export async function SettingsInit() {
@@ -213,10 +321,21 @@ export async function SettingsInit() {
             console.log("file /settings/icon exists")
         }
 
+        // Create "calibration" file
+        const CalibPath = SettingsDir + "calibration"
+        const CalibStatus = await FileSystem.getInfoAsync(CalibPath)
+        if (!CalibStatus.exists) {
+            console.log("Creating file /settings/calibration")
+            FileSystem.writeAsStringAsync(CalibPath, "0,0,0,0,0,0,0")
+        } else {
+            console.log("file /settings/calibration exists")
+        }
+
         initialized = true
         getOrientationFile()
         getAutoDeleteFile()
         getIconFile()
+        getCalibFile()
     }
 
     mutex.release()
@@ -328,4 +447,41 @@ async function getIconFile() {
     console.log("i =", i)
 
     mutex.release()
+}
+
+///////////////////////////////////////////////////// Orientation /////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////// Auto Delete /////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////// Icons ////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////// Calibration /////////////////////////////////////////////////////
+
+// Called by 'Calibrate' button in Calibration Modal
+async function setCalib(val : string) {
+    const FilePath = FileSystem.documentDirectory + "settings/calibration"
+    await FileSystem.writeAsStringAsync(FilePath, val)
+    calib = string2calib(val)
+}
+
+// Reads file system and sets value of 'calib'
+async function getCalibFile() {
+    const FilePath = FileSystem.documentDirectory + "settings/calibration"
+    const val = await FileSystem.readAsStringAsync(FilePath)
+
+    calib = string2calib(val)
+}
+
+// Returns value of 'calib'
+export function getCalib() : number[] {
+    return calib
+}
+
+function string2calib(val : string) : number[] {
+    const split = val.split(" ")
+    let nums : number[] = []
+    split.map((value) => {
+        nums.push(Number(value))
+    })
+    return nums
 }

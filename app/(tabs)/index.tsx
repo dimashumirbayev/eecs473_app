@@ -70,8 +70,10 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.DataViewerContainer}>
-                <DataViewer dataString = {data} source = {"home"}>
-                </DataViewer>
+                {(connectedDevice != null) &&
+                    <DataViewer dataString = {data} source = {"home"}>
+                    </DataViewer>
+                }
             </View>
             <TouchableOpacity
               style={styles.recordbutton}
